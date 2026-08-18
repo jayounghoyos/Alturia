@@ -1,0 +1,17 @@
+{
+  "name": "alturia",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:dashboard": "pnpm --filter dashboard dev",
+    "dev:widget": "pnpm --filter widget dev",
+    "db:up": "docker compose up -d postgres",
+    "db:migrate": "pnpm --filter api exec prisma migrate dev",
+    "db:seed": "pnpm --filter api run seed",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint"
+  }
+}

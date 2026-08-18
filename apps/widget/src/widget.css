@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* The host page's stylesheet never reaches inside the shadow root, and this
+   never leaks out — but Tailwind's preflight resets element defaults (fonts,
+   margins) relative to *this* root, so pin a sane baseline explicitly. */
+:host,
+.alturia-widget-root {
+  all: initial;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
