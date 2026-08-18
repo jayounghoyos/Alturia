@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { EmbeddingProvider } from "../llm.interface";
 
-/** Production provider — required when EMBEDDING_PROVIDER=openai (e.g. paired with LLM_CHAT_PROVIDER=anthropic). */
+/** Production provider — used when EMBEDDING_PROVIDER=openai, independent of whichever LLM_CHAT_PROVIDER is active. */
 @Injectable()
 export class OpenAiEmbeddingProvider implements EmbeddingProvider {
   constructor(private readonly config: ConfigService) {}
