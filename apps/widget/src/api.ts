@@ -1,21 +1,13 @@
 import {
+  BotConfigSchema,
   ChatResponseSchema,
+  type BotConfig,
   type ChatResponse,
 } from "@alturia/shared";
-import { z } from "zod";
+
+export type { BotConfig };
 
 const API_BASE_URL = import.meta.env.VITE_WIDGET_API_BASE_URL as string;
-
-/** One fixed bot (Asis Altura) — no publicId, no multi-tenancy. */
-const BotConfigSchema = z.object({
-  name: z.string(),
-  greeting: z.string(),
-  theme: z.object({
-    primaryColor: z.string(),
-    position: z.enum(["bottom-right", "bottom-left"]),
-  }),
-});
-export type BotConfig = z.infer<typeof BotConfigSchema>;
 
 export async function fetchBotConfig(): Promise<BotConfig> {
   const res = await fetch(`${API_BASE_URL}/api/bot-config`);

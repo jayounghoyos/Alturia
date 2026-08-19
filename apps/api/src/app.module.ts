@@ -10,6 +10,8 @@ import { LlmModule } from "./llm/llm.module";
 import { CertificatesModule } from "./certificates/certificates.module";
 import { CoursesModule } from "./courses/courses.module";
 import { AppointmentsModule } from "./appointments/appointments.module";
+import { BotModule } from "./bot/bot.module";
+import { ChatModule } from "./chat/chat.module";
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { AppointmentsModule } from "./appointments/appointments.module";
     CertificatesModule,
     CoursesModule,
     AppointmentsModule,
+    BotModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
