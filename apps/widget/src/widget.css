@@ -1,14 +1,35 @@
 @import "tailwindcss";
 
+/* Design tokens extracted from the real asistalturas.co site via computed
+   styles (getComputedStyle on their live headings/buttons/underlines) —
+   the client never sent a brand manual, so this is the closest thing to one.
+   primary #0180E1 and accent #FEC456 are pulled directly from their CSS
+   (link/heading color and the underline/input-highlight color respectively).
+   Their site uses a plain system-font stack, no custom typeface — matched
+   here rather than the invented Plus Jakarta Sans from the earlier mockups. */
+@theme {
+  --color-primary: #0180e1;
+  --color-accent: #fec456;
+  --color-bubble: #f4f5f7;
+  --color-ok: #16a34a;
+  --color-ok-bg: #dcfce7;
+  --color-warn: #b45309;
+  --color-warn-bg: #fef3e2;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-ink: #0b0f14;
+  --color-muted: #6b7280;
+  --color-faint: #9aa1ac;
+  --font-sans:
+    -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+}
+
 /* The host page's stylesheet never reaches inside the shadow root, and this
    never leaks out — but Tailwind's preflight resets element defaults (fonts,
    margins) relative to *this* root, so pin a sane baseline explicitly. */
 :host,
 .alturia-widget-root {
   all: initial;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-sans);
 }
