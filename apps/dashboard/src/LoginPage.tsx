@@ -22,42 +22,49 @@ export function LoginPage({ onLoggedIn }: { onLoggedIn: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <form
         onSubmit={handleSubmit}
         className="w-80 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200"
       >
-        <h1 className="text-xl font-bold text-slate-900">Asis Altura</h1>
-        <p className="mt-1 text-sm text-slate-500">Admin panel</p>
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white">
+            AA
+          </span>
+          <div>
+            <h1 className="font-bold text-ink">Asis Altura</h1>
+            <p className="text-xs text-muted">Admin panel</p>
+          </div>
+        </div>
 
-        <label className="mt-6 block text-sm font-medium text-slate-700">
+        <label className="mt-6 block text-sm font-medium text-ink">
           Email
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </label>
 
-        <label className="mt-4 block text-sm font-medium text-slate-700">
+        <label className="mt-4 block text-sm font-medium text-ink">
           Password
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400"
+            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </label>
 
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-3 text-sm text-danger">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="mt-6 w-full rounded-lg bg-[#16233A] py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-6 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "Signing in…" : "Sign in"}
         </button>

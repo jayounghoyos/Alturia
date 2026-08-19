@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* Same tokens as apps/widget/src/widget.css — extracted from asistalturas.co's
+   own CSS (getComputedStyle on their live headings/buttons), since the client
+   never sent a brand manual. Keep both files in sync if either changes. */
+@theme {
+  --color-primary: #0180e1;
+  --color-accent: #fec456;
+  --color-ok: #16a34a;
+  --color-ok-bg: #dcfce7;
+  --color-warn: #b45309;
+  --color-warn-bg: #fef3e2;
+  --color-danger: #dc2626;
+  --color-danger-bg: #fee2e2;
+  --color-ink: #0b0f14;
+  --color-muted: #6b7280;
+  --color-faint: #9aa1ac;
+  --font-sans:
+    -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+}
