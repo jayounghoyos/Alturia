@@ -8,6 +8,10 @@ import { resolve } from 'node:path'
 // React/ReactDOM must be bundled in, not left as external peer deps.
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
+  // Vite only reads .env from its own project root by default — the repo's
+  // single source of truth lives two levels up (see apps/api/.env, which
+  // symlinks there for the same reason).
+  envDir: resolve(import.meta.dirname, '../..'),
   // React/ReactDOM reference process.env.NODE_ENV internally for dev-mode
   // warnings. Vite auto-replaces this in normal app builds, but not
   // reliably in `build.lib` IIFE output — left unreplaced, it throws

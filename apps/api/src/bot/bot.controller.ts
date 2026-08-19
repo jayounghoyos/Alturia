@@ -1,5 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 import type { BotConfig } from "@alturia/shared";
+import { Public } from "../auth/public.decorator";
 
 // Design tokens from the original mockups (.pen): primary #16233A, accent #FF6B2C.
 // primaryColor here uses the navy — described there as headers/dark surfaces,
@@ -10,9 +11,10 @@ const BOT_CONFIG: BotConfig = {
   theme: { primaryColor: "#16233A", position: "bottom-right" },
 };
 
+/** Public — no auth. Single fixed bot, no multi-tenancy. */
+@Public()
 @Controller("api/bot-config")
 export class BotController {
-  /** Public — no auth. Single fixed bot, no multi-tenancy. */
   @Get()
   getConfig(): BotConfig {
     return BOT_CONFIG;

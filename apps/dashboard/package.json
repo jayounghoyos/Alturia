@@ -12,7 +12,8 @@
   "dependencies": {
     "@alturia/shared": "workspace:*",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

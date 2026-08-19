@@ -1,15 +1,16 @@
+import { useState } from "react";
+import { getToken } from "./api";
+import { LoginPage } from "./LoginPage";
+import { EscalationsPage } from "./EscalationsPage";
+
 function App() {
-  return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-900">Asis Altura — Admin panel</h1>
-        <p className="mt-2 text-slate-500">
-          Escalation inbox scaffold for admin staff — login and real views
-          land in the next milestone.
-        </p>
-      </div>
-    </div>
-  )
+  const [loggedIn, setLoggedIn] = useState(() => getToken() !== null);
+
+  return loggedIn ? (
+    <EscalationsPage onLogout={() => setLoggedIn(false)} />
+  ) : (
+    <LoginPage onLoggedIn={() => setLoggedIn(true)} />
+  );
 }
 
-export default App
+export default App;

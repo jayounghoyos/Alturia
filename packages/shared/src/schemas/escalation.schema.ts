@@ -15,3 +15,14 @@ export const CreateEscalationSchema = z.object({
   contact: EscalationContactSchema.optional(),
 });
 export type CreateEscalationInput = z.infer<typeof CreateEscalationSchema>;
+
+/** GET /api/escalations — admin-only, powers the dashboard inbox. */
+export const EscalationRecordSchema = z.object({
+  id: z.string(),
+  reason: z.string(),
+  status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED"]),
+  contactInfo: EscalationContactSchema.nullable(),
+  createdAt: z.string(),
+  conversationId: z.string(),
+});
+export type EscalationRecord = z.infer<typeof EscalationRecordSchema>;

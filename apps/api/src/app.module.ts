@@ -12,6 +12,9 @@ import { CoursesModule } from "./courses/courses.module";
 import { AppointmentsModule } from "./appointments/appointments.module";
 import { BotModule } from "./bot/bot.module";
 import { ChatModule } from "./chat/chat.module";
+import { AuthModule } from "./auth/auth.module";
+import { EscalationsModule } from "./escalations/escalations.module";
+import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 
 @Module({
   imports: [
@@ -29,8 +32,15 @@ import { ChatModule } from "./chat/chat.module";
     AppointmentsModule,
     BotModule,
     ChatModule,
+    AuthModule,
+    EscalationsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Protects everything by default — routes opt out with @Public().
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}
