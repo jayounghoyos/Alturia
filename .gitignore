@@ -12,6 +12,9 @@ build/
 .env.local
 .env.*.local
 !.env.example
+# Symlink to the root .env — the Prisma CLI only looks in its cwd (apps/api),
+# so this makes it see the same single source of truth. Not a secret itself.
+!apps/api/.env
 
 # Prisma
 apps/api/prisma/migrations/**/migration.sql.bak

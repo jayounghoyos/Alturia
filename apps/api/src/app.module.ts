@@ -7,6 +7,9 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { PrismaModule } from "./prisma/prisma.module";
 import { LlmModule } from "./llm/llm.module";
+import { CertificatesModule } from "./certificates/certificates.module";
+import { CoursesModule } from "./courses/courses.module";
+import { AppointmentsModule } from "./appointments/appointments.module";
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { LlmModule } from "./llm/llm.module";
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     PrismaModule,
     LlmModule,
+    CertificatesModule,
+    CoursesModule,
+    AppointmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

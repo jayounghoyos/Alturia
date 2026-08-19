@@ -5,11 +5,13 @@
     "node": ">=20"
   },
   "scripts": {
+    "postinstall": "pnpm --filter shared run build",
     "dev:api": "pnpm --filter api start:dev",
     "dev:dashboard": "pnpm --filter dashboard dev",
     "dev:widget": "pnpm --filter widget dev",
     "db:up": "docker compose up -d postgres",
-    "db:migrate": "pnpm --filter api exec prisma migrate dev",
+    "db:migrate": "pnpm --filter api exec prisma migrate deploy",
+    "db:migrate:new": "pnpm --filter api exec prisma migrate dev --create-only",
     "db:seed": "pnpm --filter api run seed",
     "build": "pnpm -r run build",
     "lint": "pnpm -r run lint"

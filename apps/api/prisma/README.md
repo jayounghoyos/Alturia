@@ -9,7 +9,7 @@ but the **similarity index (`ivfflat`) has to be added by hand** the first
 time:
 
 ```bash
-pnpm --filter api exec prisma migrate dev --name init --create-only
+pnpm db:migrate:new --name your_migration_name
 ```
 
 This generates the migration folder without applying it. Before applying,
@@ -22,16 +22,36 @@ CREATE INDEX "KnowledgeChunk_embedding_idx"
   WITH (lists = 100);
 ```
 
-Then apply normally:
+Then apply with:
 
 ```bash
-pnpm --filter api exec prisma migrate dev
+pnpm db:migrate
 ```
 
 `lists = 100` is reasonable for the volume of a demo/MVP (at most a few
 thousand chunks, single bot); if the seeded knowledge base grows a lot, that
 number needs recalculating (rule of thumb: `lists ≈ rows / 1000` for large
 datasets).
+
+### Why `db:migrate` runs `prisma migrate deploy`, not `migrate dev`
+
+Once a migration has hand-added SQL that Prisma can't express from
+`schema.prisma` (like the ivfflat index above), every later `prisma migrate
+dev` run will detect that index as "drift" — it's real in the database but
+absent from the schema-derived state — and prompt you to name a new
+migration. If you accept that prompt without reading it closely, Prisma can
+propose *dropping* the index to bring the database back in line with what
+`schema.prisma` can express.
+
+So the workflow here is split in two:
+- **`pnpm db:migrate:new`** (`prisma migrate dev --create-only`) — use this
+  only when you've changed `schema.prisma` and want to author a new
+  migration. It never applies anything automatically, so you always get a
+  chance to review/hand-edit the generated SQL first.
+- **`pnpm db:migrate`** (`prisma migrate deploy`) — applies whatever pending
+  migration files already exist, in order, with no diffing and no prompts.
+  This is what you run day to day (fresh clone, pulling a teammate's new
+  migration, CI) and it will never try to "fix" the manual index.
 
 ## Vector dimension: fixed at 768 (nomic-embed-text)
 
@@ -46,10 +66,17 @@ If `EMBEDDING_PROVIDER` changes to a model with a different output dimension
 
 ## Seed
 
-`prisma/seed.ts` (still to be written) seeds simulated domain data since Asis
-Altura doesn't share their real database: sample workers, courses, course
-sessions and certificates, plus the knowledge base (FAQ, pricing, policies)
-for RAG, and the `AdminUser` for the escalation inbox. It must be
-**idempotent** — running it twice must not duplicate anything. Use `upsert` on
-a stable key (e.g. the worker's `nationalId`, the admin's `email`) instead of
-`create`.
+`prisma/seed.ts` seeds simulated domain data since Asis Altura doesn't share
+their real database: sample workers, courses, course sessions and
+certificates, plus the `AdminUser` for the escalation inbox. It's
+**idempotent** — running it twice won't duplicate anything, since every row
+uses a fixed id or an `upsert` on a stable key (e.g. the worker's
+`nationalId`, the admin's `email`) instead of a bare `create`.
+
+The knowledge base (FAQ/pricing/policy content -> embedded chunks) isn't
+seeded here yet — it needs a live embedding provider (Ollama or OpenAI) to
+run, so it's added once the RAG/chat module lands.
+
+Run it with `pnpm db:seed`. The admin login password defaults to
+`changeme123` (printed to the console on seed) unless `SEED_ADMIN_PASSWORD` is
+set in `.env`.
