@@ -10,6 +10,10 @@ export const ChatResponseSchema = z.object({
   reply: z.string(),
   lowConfidence: z.boolean().default(false),
   escalationOffered: z.boolean().default(false),
+  /** True once a case is escalated and an admin hasn't resolved it yet — the
+   * bot stops generating replies so it doesn't talk over the human advisor.
+   * `reply` is empty in that case; the widget should skip rendering it. */
+  awaitingHuman: z.boolean().default(false),
 });
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
 

@@ -41,6 +41,14 @@ export class ChatService {
       data: { conversationId: conversation.id, role: "USER", content: message },
     });
 
+    // A human advisor already has this case — don't talk over them. The
+    // message is still saved (the admin sees it in the thread), just no bot
+    // reply gets generated. Status flips back to OPEN/CLOSED on resolve, at
+    // which point the bot resumes normally (see EscalationsService.resolve).
+    if (conversation.status === "ESCALATED") {
+      return { reply: "", lowConfidence: false, escalationOffered: false, awaitingHuman: true };
+    }
+
     if (matchesEscalationKeyword(message)) {
       return this.handleEscalation(conversation.id, sessionId, message);
     }
@@ -62,7 +70,7 @@ export class ChatService {
 
     // No retrieval yet, so there's no real confidence score to threshold on —
     // both flags stay false until the RAG pipeline lands (see prompt-builder.service.ts).
-    return { reply: result.content, lowConfidence: false, escalationOffered: false };
+    return { reply: result.content, lowConfidence: false, escalationOffered: false, awaitingHuman: false };
   }
 
   /** Polled by the widget — returns [] for an unknown/mistyped sessionId rather than erroring. */
@@ -89,13 +97,13 @@ export class ChatService {
 
     const reply =
       "Listo, ya avisé al equipo de Asis Altura y un asesor va a revisar tu caso pronto. " +
-      "Si quieres, mientras tanto puedes seguir contándome más detalles.";
+      "A partir de ahora un humano va a responderte por aquí mismo.";
 
     await this.prisma.message.create({
       data: { conversationId, role: "BOT", content: reply },
     });
 
-    return { reply, lowConfidence: false, escalationOffered: true };
+    return { reply, lowConfidence: false, escalationOffered: true, awaitingHuman: false };
   }
 }
 

@@ -3,6 +3,7 @@ import type {
   AppointmentConfirmation,
   AvailableSession,
   CertificateLookup,
+  ChatResponse,
   Course,
 } from "@alturia/shared";
 import { NationalIdSchema } from "@alturia/shared";
@@ -130,6 +131,17 @@ export function ChatWidget() {
 
   function userText(content: string) {
     setMessages((prev) => [...prev, { id: id(), role: "user", kind: "text", content }]);
+  }
+
+  /** Shared by every call site that gets back a ChatResponse — keeps the
+   * "don't show a bot bubble while a human has the case" rule in one place. */
+  function handleChatResponse(res: ChatResponse) {
+    if (res.awaitingHuman) {
+      void startPollingForReplies();
+      return;
+    }
+    botText(res.reply);
+    if (res.escalationOffered) void startPollingForReplies();
   }
 
   function pushOptions(options: { label: string; icon: ReactNode; onSelect: () => void }[]) {
@@ -374,8 +386,7 @@ export function ChatWidget() {
     setSending(true);
     try {
       const res = await sendChatMessage(sessionId.current, question);
-      botText(res.reply);
-      if (res.escalationOffered) void startPollingForReplies();
+      handleChatResponse(res);
     } catch {
       botText("Tuvimos un problema respondiendo. Intenta de nuevo en un momento.");
     } finally {
@@ -419,8 +430,7 @@ export function ChatWidget() {
     setSending(true);
     try {
       const res = await sendChatMessage(sessionId.current, text);
-      botText(res.reply);
-      if (res.escalationOffered) void startPollingForReplies();
+      handleChatResponse(res);
     } catch {
       botText("Tuvimos un problema respondiendo. Intenta de nuevo en un momento.");
     } finally {
