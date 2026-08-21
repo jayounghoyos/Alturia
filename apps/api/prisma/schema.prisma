@@ -178,6 +178,7 @@ model Conversation {
 enum MsgRole {
   USER
   BOT
+  ADMIN
   SYSTEM
 }
 

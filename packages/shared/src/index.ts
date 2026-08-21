@@ -5,3 +5,4 @@ export * from "./schemas/escalation.schema.js";
 export * from "./schemas/chat.schema.js";
 export * from "./schemas/bot-config.schema.js";
 export * from "./schemas/auth.schema.js";
+export * from "./schemas/knowledge.schema.js";

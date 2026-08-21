@@ -14,6 +14,7 @@ import { BotModule } from "./bot/bot.module";
 import { ChatModule } from "./chat/chat.module";
 import { AuthModule } from "./auth/auth.module";
 import { EscalationsModule } from "./escalations/escalations.module";
+import { KnowledgeModule } from "./knowledge/knowledge.module";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 
 @Module({
@@ -34,6 +35,7 @@ import { JwtAuthGuard } from "./auth/jwt-auth.guard";
     ChatModule,
     AuthModule,
     EscalationsModule,
+    KnowledgeModule,
   ],
   controllers: [AppController],
   providers: [

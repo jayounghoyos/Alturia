@@ -5,6 +5,7 @@ import {
   CourseSchema,
   AvailableSessionSchema,
   AppointmentConfirmationSchema,
+  MessageRecordSchema,
   type BotConfig,
   type ChatResponse,
   type CertificateLookupResponse,
@@ -13,6 +14,7 @@ import {
   type CreateAppointmentInput,
   type AppointmentConfirmation,
   type CreateEscalationInput,
+  type MessageRecord,
 } from "@alturia/shared";
 import { z } from "zod";
 
@@ -81,6 +83,12 @@ export async function createEscalation(input: CreateEscalationInput): Promise<vo
     body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error(`Escalation failed (${res.status})`);
+}
+
+/** Polled after an escalation to pick up ADMIN replies typed from the dashboard. */
+export async function fetchConversationMessages(sessionId: string): Promise<MessageRecord[]> {
+  const res = await fetch(`${API_BASE_URL}/api/chat/${sessionId}/messages`);
+  return parseOrThrow(res, z.array(MessageRecordSchema), "Loading conversation");
 }
 
 /** One anonymous visitor per browser, reused across visits. */

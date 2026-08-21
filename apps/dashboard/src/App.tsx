@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { getToken } from "./api";
 import { LoginPage } from "./LoginPage";
-import { EscalationsPage } from "./EscalationsPage";
+import { DashboardShell } from "./DashboardShell";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => getToken() !== null);
 
   return loggedIn ? (
-    <EscalationsPage onLogout={() => setLoggedIn(false)} />
+    <DashboardShell onLogout={() => setLoggedIn(false)} />
   ) : (
     <LoginPage onLoggedIn={() => setLoggedIn(true)} />
   );

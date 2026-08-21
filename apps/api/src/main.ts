@@ -6,14 +6,14 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
-  // Single bot, embedded only on asisaltura.com — a fixed allowlist, not a
-  // wildcard "any origin" (that would only be needed if we went back to
-  // multi-tenancy with arbitrary embeds).
-  const allowedOrigins = [
-    config.getOrThrow<string>("DASHBOARD_ORIGIN"),
-    config.getOrThrow<string>("WIDGET_ORIGIN"),
-  ];
-  app.enableCors({ origin: allowedOrigins, credentials: true });
+  // Open CORS on purpose — an embeddable widget has to work on whatever
+  // origin a customer pastes the script tag into, which we can't know in
+  // advance (that's the whole point of "paste this HTML anywhere"). This
+  // isn't a security gap: we never use cookies, so there's nothing for a
+  // third-party origin to ride on, and every route that actually needs
+  // protecting (dashboard/admin endpoints) is gated by JwtAuthGuard, not by
+  // which origin the request came from.
+  app.enableCors({ origin: true });
 
   await app.listen(config.get<number>("PORT") ?? 3000);
 }

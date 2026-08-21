@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import type { ChatResponse } from "@alturia/shared";
+import type { ChatResponse, MessageRecord } from "@alturia/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { LLM_CHAT_PROVIDER, type LlmChatProvider } from "../llm/llm.interface";
 import { PromptBuilderService } from "./prompt-builder.service";
@@ -51,7 +51,7 @@ export class ChatService {
     }));
 
     const result = await this.llm.chat({
-      systemPrompt: this.promptBuilder.buildSystemPrompt(),
+      systemPrompt: await this.promptBuilder.buildSystemPrompt(),
       messages: [...history, { role: "user", content: message }],
       temperature: CHAT_TEMPERATURE,
     });
@@ -63,6 +63,21 @@ export class ChatService {
     // No retrieval yet, so there's no real confidence score to threshold on —
     // both flags stay false until the RAG pipeline lands (see prompt-builder.service.ts).
     return { reply: result.content, lowConfidence: false, escalationOffered: false };
+  }
+
+  /** Polled by the widget — returns [] for an unknown/mistyped sessionId rather than erroring. */
+  async getMessages(sessionId: string): Promise<MessageRecord[]> {
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { sessionId },
+      include: { messages: { orderBy: { createdAt: "asc" } } },
+    });
+    if (!conversation) return [];
+    return conversation.messages.map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content,
+      createdAt: m.createdAt.toISOString(),
+    }));
   }
 
   private async handleEscalation(

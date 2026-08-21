@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from "@nestjs/common";
+import { Controller, Get, Param, Body, Post } from "@nestjs/common";
 import { ChatRequestSchema, type ChatRequestInput } from "@alturia/shared";
 import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Public } from "../auth/public.decorator";
@@ -13,5 +13,15 @@ export class ChatController {
   @Post()
   send(@Body(new ZodValidationPipe(ChatRequestSchema)) body: ChatRequestInput) {
     return this.chat.handleMessage(body.sessionId, body.message);
+  }
+
+  /**
+   * Polled by the widget after an escalation, to pick up ADMIN replies typed
+   * from the dashboard. sessionId is a UUID the visitor's own browser
+   * generated — same trust model as the rest of the public API (see main.ts).
+   */
+  @Get(":sessionId/messages")
+  getMessages(@Param("sessionId") sessionId: string) {
+    return this.chat.getMessages(sessionId);
   }
 }

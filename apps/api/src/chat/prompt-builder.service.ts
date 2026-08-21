@@ -1,19 +1,9 @@
 import { Injectable } from "@nestjs/common";
+import { KnowledgeService } from "../knowledge/knowledge.service";
 
-/**
- * Plain FAQ system prompt — no retrieval yet. This is the pre-RAG version:
- * the "knowledge" is inline here instead of coming from embedded
- * KnowledgeChunks via pgvector similarity search. Swapping this for real
- * retrieval-augmented context is the next increment (see prisma/README.md's
- * knowledge-base note); until then this only knows what's written below and
- * is explicitly told not to invent specifics like prices.
- */
-@Injectable()
-export class PromptBuilderService {
-  buildSystemPrompt(): string {
-    return `Eres el asistente virtual del chat de Asis Altura, un centro de capacitación colombiano en trabajo seguro en alturas.
+const BASE_PROMPT = `Eres el asistente virtual del chat de Asis Altura, un centro de capacitación colombiano en trabajo seguro en alturas.
 
-Lo que sabes:
+Lo que sabes por defecto:
 - Asis Altura certifica trabajadores en trabajo seguro en alturas (labores a más de 1.50 metros de altura).
 - Ofrecen dos tipos de curso: uno avanzado (formación inicial) y uno de reentrenamiento (renovación periódica).
 - Un trabajador certificado tiene DOS vigencias independientes: la del curso y la del examen médico ocupacional. Pueden vencer en fechas distintas — una puede estar vigente mientras la otra está vencida.
@@ -24,5 +14,26 @@ Reglas de comportamiento:
 - Responde siempre en español, de forma breve, clara y amable.
 - Nunca inventes precios, fechas de cursos o datos específicos que no tengas — si te preguntan algo así, dilo honestamente y ofrece escalar a un asesor.
 - Nunca reveles información médica ni datos personales de un trabajador; una consulta de certificado solo debe dar estado (vigente/vencido) y fecha.`;
+
+/**
+ * Plain context-stuffing, not real RAG: whatever the admin uploads via
+ * KnowledgeModule gets appended whole to the system prompt (truncated, see
+ * KnowledgeService.MAX_CONTEXT_CHARS) instead of being chunked/embedded and
+ * retrieved by similarity. Good enough for one or two short documents; swap
+ * for pgvector retrieval (schema already supports it) if that stops being true.
+ */
+@Injectable()
+export class PromptBuilderService {
+  constructor(private readonly knowledge: KnowledgeService) {}
+
+  async buildSystemPrompt(): Promise<string> {
+    const uploadedContext = await this.knowledge.getActiveContext();
+    if (!uploadedContext) return BASE_PROMPT;
+
+    return `${BASE_PROMPT}
+
+Además, el equipo de Asis Altura subió este contexto adicional — dale prioridad sobre lo anterior si hay conflicto, y sigue sin inventar nada que no esté aquí ni en lo de arriba:
+
+${uploadedContext}`;
   }
 }

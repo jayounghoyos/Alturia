@@ -11,6 +11,7 @@ import {
   createEscalation,
   fetchAvailability,
   fetchBotConfig,
+  fetchConversationMessages,
   fetchCourses,
   getOrCreateSessionId,
   lookupCertificate,
@@ -21,6 +22,7 @@ import { WidgetHeader } from "./components/WidgetHeader";
 import { OptionButton } from "./components/OptionButton";
 import { CertificateCard } from "./components/CertificateCard";
 import { ConfirmationCard } from "./components/ConfirmationCard";
+import { QrScannerCard } from "./components/QrScannerCard";
 import {
   AdvisorIcon,
   ArrowLeftIcon,
@@ -28,6 +30,7 @@ import {
   DocumentIcon,
   InfoIcon,
   PinIcon,
+  QrIcon,
   SearchIcon,
   SendIcon,
 } from "./icons";
@@ -36,7 +39,8 @@ type Msg =
   | { id: string; role: "user" | "bot"; kind: "text"; content: string }
   | { id: string; role: "bot"; kind: "options"; options: { label: string; icon: ReactNode; onSelect: () => void }[] }
   | { id: string; role: "bot"; kind: "certificate"; certificate: CertificateLookup; onScheduleRetraining?: () => void }
-  | { id: string; role: "bot"; kind: "confirmation"; confirmation: AppointmentConfirmation };
+  | { id: string; role: "bot"; kind: "confirmation"; confirmation: AppointmentConfirmation }
+  | { id: string; role: "bot"; kind: "qr" };
 
 type FlowStep =
   | { kind: "idle" }
@@ -75,6 +79,8 @@ export function ChatWidget() {
   const [sending, setSending] = useState(false);
   const sessionId = useRef(getOrCreateSessionId());
   const listRef = useRef<HTMLDivElement>(null);
+  const seenMessageIds = useRef<Set<string>>(new Set());
+  const pollTimer = useRef<number | null>(null);
 
   useEffect(() => {
     fetchBotConfig()
@@ -84,8 +90,35 @@ export function ChatWidget() {
         showMainMenu();
       })
       .catch((err: Error) => setLoadError(err.message));
+    return () => {
+      if (pollTimer.current) window.clearInterval(pollTimer.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /** Starts (once) polling for ADMIN replies typed from the dashboard once a case is escalated. */
+  async function startPollingForReplies() {
+    if (pollTimer.current) return;
+    const baseline = await fetchConversationMessages(sessionId.current).catch(() => []);
+    baseline.forEach((m) => seenMessageIds.current.add(m.id));
+
+    pollTimer.current = window.setInterval(async () => {
+      const msgs = await fetchConversationMessages(sessionId.current).catch(() => []);
+      const newAdminMsgs = msgs.filter((m) => m.role === "ADMIN" && !seenMessageIds.current.has(m.id));
+      msgs.forEach((m) => seenMessageIds.current.add(m.id));
+      if (newAdminMsgs.length > 0) {
+        setMessages((prev) => [
+          ...prev,
+          ...newAdminMsgs.map((m) => ({
+            id: id(),
+            role: "bot" as const,
+            kind: "text" as const,
+            content: `👤 Asesor humano: ${m.content}`,
+          })),
+        ]);
+      }
+    }, 4000);
+  }
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -103,15 +136,26 @@ export function ChatWidget() {
     setMessages((prev) => [...prev, { id: id(), role: "bot", kind: "options", options }]);
   }
 
+  function removeMessage(msgId: string) {
+    setMessages((prev) => prev.filter((m) => m.id !== msgId));
+  }
+
   function showMainMenu() {
     setStep({ kind: "idle" });
     botText("Selecciona una opción:");
     pushOptions([
       { label: "Consultar un certificado", icon: <SearchIcon className="h-4 w-4" />, onSelect: startCertificateFlow },
+      { label: "Leer código QR del certificado", icon: <QrIcon className="h-4 w-4" />, onSelect: startQrScan },
       { label: "Agendar un curso", icon: <SearchIcon className="h-4 w-4" />, onSelect: () => startBookingFlow() },
       { label: "Preguntas frecuentes", icon: <SearchIcon className="h-4 w-4" />, onSelect: startFaq },
       { label: "Hablar con un asesor", icon: <SearchIcon className="h-4 w-4" />, onSelect: startEscalation },
     ]);
+  }
+
+  function startQrScan() {
+    botText("Apunta la cámara al código QR del certificado.");
+    setMessages((prev) => [...prev, { id: id(), role: "bot", kind: "qr" }]);
+    setStep({ kind: "idle" });
   }
 
   function startCertificateFlow() {
@@ -331,6 +375,7 @@ export function ChatWidget() {
     try {
       const res = await sendChatMessage(sessionId.current, question);
       botText(res.reply);
+      if (res.escalationOffered) void startPollingForReplies();
     } catch {
       botText("Tuvimos un problema respondiendo. Intenta de nuevo en un momento.");
     } finally {
@@ -346,6 +391,7 @@ export function ChatWidget() {
         reason: "El usuario pidió hablar con un asesor desde el menú principal.",
       });
       botText("Listo, ya avisé al equipo de Asis Altura y un asesor va a revisar tu caso pronto.");
+      void startPollingForReplies();
     } catch {
       botText("No pude conectar con el equipo en este momento. Intenta de nuevo en un momento.");
     } finally {
@@ -374,6 +420,7 @@ export function ChatWidget() {
     try {
       const res = await sendChatMessage(sessionId.current, text);
       botText(res.reply);
+      if (res.escalationOffered) void startPollingForReplies();
     } catch {
       botText("Tuvimos un problema respondiendo. Intenta de nuevo en un momento.");
     } finally {
@@ -422,6 +469,18 @@ export function ChatWidget() {
                     key={m.id}
                     certificate={m.certificate}
                     onScheduleRetraining={m.onScheduleRetraining}
+                  />
+                );
+              }
+              if (m.kind === "qr") {
+                return (
+                  <QrScannerCard
+                    key={m.id}
+                    onClose={() => removeMessage(m.id)}
+                    onFallback={() => {
+                      removeMessage(m.id);
+                      startCertificateFlow();
+                    }}
                   />
                 );
               }

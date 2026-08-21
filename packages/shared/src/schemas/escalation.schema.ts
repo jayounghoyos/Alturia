@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MessageRecordSchema } from "./chat.schema.js";
 
 /** Contact details captured only when the user agrees to escalate to an advisor (Colombian Law 1581 of 2012). */
 export const EscalationContactSchema = z.object({
@@ -26,3 +27,17 @@ export const EscalationRecordSchema = z.object({
   conversationId: z.string(),
 });
 export type EscalationRecord = z.infer<typeof EscalationRecordSchema>;
+
+/** GET /api/escalations/:id — admin-only, the full conversation thread. */
+export const EscalationDetailSchema = z.object({
+  escalation: EscalationRecordSchema,
+  sessionId: z.string(),
+  messages: z.array(MessageRecordSchema),
+});
+export type EscalationDetail = z.infer<typeof EscalationDetailSchema>;
+
+/** POST /api/escalations/:id/reply — admin-only, sends a message into the conversation. */
+export const ReplyToEscalationSchema = z.object({
+  content: z.string().min(1).max(2000),
+});
+export type ReplyToEscalationInput = z.infer<typeof ReplyToEscalationSchema>;

@@ -12,3 +12,15 @@ export const ChatResponseSchema = z.object({
   escalationOffered: z.boolean().default(false),
 });
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+
+export const MessageRoleSchema = z.enum(["USER", "BOT", "ADMIN", "SYSTEM"]);
+export type MessageRole = z.infer<typeof MessageRoleSchema>;
+
+/** Shared by the admin escalation-detail view and the widget's own polling endpoint. */
+export const MessageRecordSchema = z.object({
+  id: z.string(),
+  role: MessageRoleSchema,
+  content: z.string(),
+  createdAt: z.string(),
+});
+export type MessageRecord = z.infer<typeof MessageRecordSchema>;
