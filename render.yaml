@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: alturia-api
+    runtime: node
+    plan: free
+    rootDir: apps/api
+    # Install runs from the monorepo root so pnpm workspace linking (@alturia/shared)
+    # resolves correctly — its postinstall hook already builds packages/shared,
+    # so this only needs to build the api itself on top of that.
+    buildCommand: cd ../.. && pnpm install && pnpm --filter api run build
+    startCommand: node dist/src/main.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        sync: false # set to the Neon connection string in the Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: LLM_CHAT_PROVIDER
+        value: openrouter
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OPENROUTER_CHAT_MODEL
+        value: qwen/qwen3.6-plus:free
+      # EMBEDDING_PROVIDER is required at boot (the LlmModule factory validates
+      # it exists) but nothing actually calls .embed() yet — KnowledgeModule
+      # does plain context-stuffing, not chunked/embedded RAG. Left as
+      # "ollama" even in prod on purpose: it's genuinely never invoked, so
+      # there's no reason to require an OpenAI account (and its billing info)
+      # just to satisfy this unused check. Revisit once real RAG lands.
+      - key: EMBEDDING_PROVIDER
+        value: ollama
+      - key: OLLAMA_BASE_URL
+        value: http://localhost:11434
+      - key: OLLAMA_EMBED_MODEL
+        value: nomic-embed-text
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
