@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: alturia-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: alturia
+      POSTGRES_PASSWORD: alturia
+      POSTGRES_DB: alturia
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./.docker-data/postgres:/var/lib/postgresql/data
