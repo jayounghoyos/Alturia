@@ -2,7 +2,7 @@
 
 NestJS backend for the Asis Altura chatbot (single client, no
 multi-tenancy). Prisma + PostgreSQL/pgvector, swappable LLM abstraction
-(local Ollama in dev, OpenRouter/Anthropic in prod).
+(local Ollama in dev, OpenRouter in prod).
 
 ```bash
 pnpm --filter api start:dev
