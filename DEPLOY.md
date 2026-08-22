@@ -9,7 +9,7 @@ see the comparison below before picking anything else.
 | [Neon](https://neon.tech) | PostgreSQL + pgvector | Free tier suspends compute after 5 min idle but **never deletes data** — just wakes up on the next query. Render's own free Postgres deletes the database after 30 days + a 14-day grace period. |
 | [Render](https://render.com) | NestJS API | Free web services sleep after 15 min idle (30-60s cold start) but are **never deleted**. Fine to leave dormant for months — just ping it a few minutes before presenting. |
 | [Vercel](https://vercel.com) | Dashboard + widget | Static hosting, no inactivity expiry at all. |
-| [OpenRouter](https://openrouter.ai) | Production LLM | `qwen/qwen3.6-plus:free` — free model, no card required. |
+| [OpenRouter](https://openrouter.ai) | Production LLM | `nvidia/nemotron-3-nano-30b-a3b:free` — free model, no card required. Free models get deprecated over time (this replaced an earlier one) — see `render.yaml`'s comment if it needs swapping again. |
 
 No paid tier anywhere in this path. `EMBEDDING_PROVIDER` is deliberately left
 as `ollama` even in production (see `render.yaml`'s comment) — nothing in the
