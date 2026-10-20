@@ -59,13 +59,17 @@ partway, paste it back and I'll help debug.
 5. Once live, copy the service URL (`https://alturia-api-xxxx.onrender.com`)
    — you'll need it in step 3.
 
-### Apply the schema + seed (run once, from your machine)
+### Schema + seed (automatic on every deploy)
+
+Render's build command runs `prisma migrate deploy` and the seed against Neon
+after building, so merging a PR that adds a migration updates the database in
+the same deploy — no manual step. If a migration fails, the build fails and the
+previous version keeps serving.
+
+To run them by hand anyway (e.g. to debug a failing migration):
 
 ```bash
-# Point at Neon instead of local Postgres, just for this one command:
 DATABASE_URL="<neon connection string>" pnpm --filter api exec prisma migrate deploy
-
-# Same for the seed — use a real SEED_ADMIN_PASSWORD, matching what you set in Render:
 DATABASE_URL="<neon connection string>" SEED_ADMIN_PASSWORD="<your real password>" \
   pnpm --filter api run seed
 ```

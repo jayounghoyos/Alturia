@@ -7,7 +7,20 @@ services:
     # Install runs from the monorepo root so pnpm workspace linking (@alturia/shared)
     # resolves correctly — its postinstall hook already builds packages/shared,
     # so this only needs to build the api itself on top of that.
-    buildCommand: cd ../.. && pnpm install && pnpm --filter api run build
+    #
+    # Then it brings Neon up to date with the code being deployed, so a schema
+    # change can't ship without its migration (that's how the publicToken column
+    # went missing). `migrate deploy` only applies pending migration files — no
+    # diffing, so it never touches the hand-added pgvector index (see
+    # apps/api/prisma/README.md). The seed is idempotent (upserts on fixed ids),
+    # so re-running it every deploy only fills in new demo data. Both read
+    # DATABASE_URL / SEED_ADMIN_PASSWORD from this service's env vars. Render's
+    # preDeployCommand would be the cleaner hook, but it isn't available on the
+    # free instance type, so this runs at the end of the build instead.
+    buildCommand: >-
+      cd ../.. && pnpm install && pnpm --filter api run build
+      && pnpm --filter api exec prisma migrate deploy
+      && pnpm --filter api run seed
     startCommand: node dist/src/main.js
     healthCheckPath: /
     envVars:
