@@ -109,9 +109,10 @@ async function seedWorkersAndCertificates() {
   // worker1: both certificates valid — the "everything's fine" demo path.
   await prisma.certificate.upsert({
     where: { id: "cert-worker1-course" },
-    update: {},
+    update: { publicToken: "demo-worker1-course" },
     create: {
       id: "cert-worker1-course",
+      publicToken: "demo-worker1-course",
       workerId: worker1.id,
       courseId: "course-advanced",
       expirationType: "COURSE",
@@ -122,9 +123,10 @@ async function seedWorkersAndCertificates() {
   });
   await prisma.certificate.upsert({
     where: { id: "cert-worker1-medical" },
-    update: {},
+    update: { publicToken: "demo-worker1-medical" },
     create: {
       id: "cert-worker1-medical",
+      publicToken: "demo-worker1-medical",
       workerId: worker1.id,
       courseId: "course-advanced",
       expirationType: "MEDICAL_EXAM",
@@ -138,9 +140,10 @@ async function seedWorkersAndCertificates() {
   // path for "the two expiration types are independent" (HU-01).
   await prisma.certificate.upsert({
     where: { id: "cert-worker2-course" },
-    update: {},
+    update: { publicToken: "demo-worker2-course" },
     create: {
       id: "cert-worker2-course",
+      publicToken: "demo-worker2-course",
       workerId: worker2.id,
       courseId: "course-retraining",
       expirationType: "COURSE",
@@ -151,9 +154,10 @@ async function seedWorkersAndCertificates() {
   });
   await prisma.certificate.upsert({
     where: { id: "cert-worker2-medical" },
-    update: {},
+    update: { publicToken: "demo-worker2-medical" },
     create: {
       id: "cert-worker2-medical",
+      publicToken: "demo-worker2-medical",
       workerId: worker2.id,
       courseId: "course-retraining",
       expirationType: "MEDICAL_EXAM",

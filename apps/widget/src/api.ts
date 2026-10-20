@@ -55,6 +55,16 @@ export async function lookupCertificate(nationalId: string): Promise<Certificate
   return parseOrThrow(res, CertificateLookupResponseSchema, "Certificate lookup");
 }
 
+export async function lookupCertificateByQr(payload: string): Promise<CertificateLookupResponse> {
+  const res = await fetch(`${API_BASE_URL}/api/certificates/qr`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ payload }),
+  });
+  if (res.status === 404) throw new Error("NOT_FOUND");
+  return parseOrThrow(res, CertificateLookupResponseSchema, "QR certificate lookup");
+}
+
 export async function fetchCourses(): Promise<Course[]> {
   const res = await fetch(`${API_BASE_URL}/api/courses`);
   return parseOrThrow(res, z.array(CourseSchema), "Loading courses");

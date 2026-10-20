@@ -19,3 +19,8 @@ export const CertificateLookupResponseSchema = z.object({
 export type CertificateLookupResponse = z.infer<
   typeof CertificateLookupResponseSchema
 >;
+
+export const QrLookupSchema = z.object({
+  payload: z.string().trim().min(1).max(2048),
+});
+export type QrLookupInput = z.infer<typeof QrLookupSchema>;

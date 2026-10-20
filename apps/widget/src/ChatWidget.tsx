@@ -16,6 +16,7 @@ import {
   fetchCourses,
   getOrCreateSessionId,
   lookupCertificate,
+  lookupCertificateByQr,
   sendChatMessage,
   type BotConfig,
 } from "./api";
@@ -165,9 +166,44 @@ export function ChatWidget() {
   }
 
   function startQrScan() {
-    botText("Apunta la cámara al código QR del certificado.");
+    botText("Escanea el código QR o pega/sube una captura del certificado.");
     setMessages((prev) => [...prev, { id: id(), role: "bot", kind: "qr" }]);
     setStep({ kind: "idle" });
+  }
+
+  async function handleQrDecoded(payload: string) {
+    setSending(true);
+    try {
+      const result = await lookupCertificateByQr(payload);
+      botText(
+        result.certificates.length > 1
+          ? "Encontré estas certificaciones asociadas al código QR:"
+          : "Encontré una certificación asociada al código QR:",
+      );
+      for (const cert of result.certificates) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: id(),
+            role: "bot",
+            kind: "certificate",
+            certificate: cert,
+            onScheduleRetraining:
+              cert.status === "EXPIRED" && cert.expirationType === "COURSE"
+                ? () => startBookingFlow("course-retraining")
+                : undefined,
+          },
+        ]);
+      }
+    } catch (err) {
+      botText(
+        err instanceof Error && err.message === "NOT_FOUND"
+          ? "Este código QR no corresponde a un certificado registrado."
+          : "Tuvimos un problema validando el QR. Intenta de nuevo o usa la cédula.",
+      );
+    } finally {
+      setSending(false);
+    }
   }
 
   function startCertificateFlow() {
@@ -491,6 +527,7 @@ export function ChatWidget() {
                       removeMessage(m.id);
                       startCertificateFlow();
                     }}
+                    onDecoded={(payload) => void handleQrDecoded(payload)}
                   />
                 );
               }

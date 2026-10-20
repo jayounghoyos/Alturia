@@ -43,6 +43,34 @@ npx serve apps/widget/dist
 # open the served /test.html — the chat bubble should appear bottom-right
 ```
 
+### Testing certificate QR codes
+
+The seeded demo certificates use opaque QR payloads. Encode one of these values
+as a QR image with any QR generator, then choose **Leer código QR** in the
+widget and either scan it, paste the image, or upload a PNG/JPG:
+
+```text
+demo-worker1-course
+demo-worker1-medical
+demo-worker2-course
+demo-worker2-medical
+```
+
+The backend also accepts these future-friendly forms without changing the
+widget:
+
+```text
+alturia://certificate/demo-worker1-course
+https://example.com/certificates/demo-worker1-course
+https://example.com/verify?token=demo-worker1-course
+```
+
+The QR contains only an opaque token. The API resolves it to a certificate and
+calculates `VALID` or `EXPIRED` from `expiresAt` at lookup time. When Asis
+Altura provides the real QR format, add its parser to
+`apps/api/src/certificates/certificates.service.ts`; the public response and
+widget flow can remain unchanged.
+
 ## Useful scripts
 
 | Command | Does |

@@ -51,6 +51,8 @@ enum CertificateStatus {
 
 model Certificate {
   id             String            @id @default(cuid())
+  /// Opaque value encoded in the certificate QR. Never contains personal data.
+  publicToken    String            @unique @default(cuid())
   expirationType ExpirationType
   issuedAt       DateTime
   expiresAt      DateTime
