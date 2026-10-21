@@ -27,9 +27,15 @@ export const e2eGlobals = globalThis as typeof globalThis & {
  * (ConfigModule and Prisma) never overrides a variable that is already set.
  */
 export default async function globalSetup(): Promise<void> {
+  const started = Date.now();
+  process.stdout.write("\n");
+  log("Preparing the e2e database");
   let databaseUrl = process.env.E2E_DATABASE_URL;
 
-  if (!databaseUrl) {
+  if (databaseUrl) {
+    log(`  Using E2E_DATABASE_URL (${redact(databaseUrl)})`);
+  } else {
+    log(`  Starting a throwaway ${POSTGRES_IMAGE} container (Testcontainers)…`);
     try {
       const container = await new PostgreSqlContainer(POSTGRES_IMAGE).start();
       e2eGlobals.__E2E_POSTGRES__ = container;
@@ -41,17 +47,37 @@ export default async function globalSetup(): Promise<void> {
           `database.\n\n${String(error)}`,
       );
     }
+    log(`  Container ready at ${redact(databaseUrl)}`);
   }
 
   process.env.DATABASE_URL = databaseUrl;
 
-  execFileSync(
+  const output = execFileSync(
     process.execPath,
     [require.resolve("prisma/build/index.js"), "migrate", "deploy"],
     {
       cwd: resolve(__dirname, ".."),
       env: { ...process.env, DATABASE_URL: databaseUrl },
+      encoding: "utf8",
       stdio: "pipe",
     },
   );
+  const applied = [...output.matchAll(/Applying migration `([^`]+)`/g)].map(
+    (m) => m[1],
+  );
+  log(
+    applied.length
+      ? `  Applied ${applied.length} migration(s):\n${applied.map((m) => `    - ${m}`).join("\n")}`
+      : "  Schema already up to date (no pending migrations)",
+  );
+  log(`  Ready in ${((Date.now() - started) / 1000).toFixed(1)} s\n`);
+}
+
+function log(message: string): void {
+  process.stdout.write(`[e2e] ${message.replace(/\n(?!$)/g, "\n[e2e] ")}\n`);
+}
+
+/** Hides the password so connection strings are safe to print in CI logs. */
+function redact(url: string): string {
+  return url.replace(/\/\/([^:/@]+):[^@]*@/, "//$1:***@");
 }
