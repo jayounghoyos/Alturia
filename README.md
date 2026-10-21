@@ -82,6 +82,8 @@ widget flow can remain unchanged.
 | `pnpm db:seed` | Seed demo data (workers, courses, sessions, certificates, admin login) |
 | `pnpm build` | Build all apps |
 | `pnpm lint` | Lint all apps |
+| `pnpm --filter api run test` | API unit tests (no database needed) |
+| `pnpm --filter api run test:e2e` | API e2e tests against a throwaway Postgres container — only needs Docker running (set `E2E_DATABASE_URL` to use an existing test database instead) |
 
 ## Repo layout
 
