@@ -25,6 +25,9 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgresql://alturia:alturia@localhost:5432/alturia
+      # Reuse the service above for e2e instead of starting a Testcontainers
+      # Postgres (apps/api/test/global-setup.ts does that only when this is unset).
+      E2E_DATABASE_URL: postgresql://alturia:alturia@localhost:5432/alturia
       JWT_SECRET: ci-test-secret
       LLM_CHAT_PROVIDER: ollama
       EMBEDDING_PROVIDER: ollama
