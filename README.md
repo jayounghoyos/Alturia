@@ -64,17 +64,15 @@ Requisitos: Node 22 (`.nvmrc`), pnpm 10, Docker y, opcionalmente, Ollama.
 ```bash
 pnpm install
 cp .env.example .env    # un solo .env para todo el monorepo
-pnpm db:up              # Postgres + pgvector en Docker
-pnpm db:migrate         # aplica las migraciones
-pnpm db:seed            # datos demo, bots y admins
 ollama pull qwen2.5:7b  # solo si LLM_CHAT_PROVIDER=ollama
-
-pnpm dev:api            # http://localhost:3000
-pnpm dev:dashboard      # http://localhost:5173
-pnpm dev:widget         # http://localhost:5174
+pnpm dev                # Postgres + migraciones + seed, y luego todo en paralelo
 ```
 
-El API valida todas sus variables al arrancar (`apps/api/src/config/env.schema.ts`) y avisa
+`pnpm dev` deja corriendo el API (http://localhost:3000), el dashboard (http://localhost:5173),
+el widget (http://localhost:5174) y `shared` en modo watch, con los logs de cada uno etiquetados.
+Para levantar una sola parte: `pnpm dev:api`, `pnpm dev:dashboard` o `pnpm dev:widget`.
+
+El API valida todas las variables al arrancar (`apps/api/src/config/env.schema.ts`) y avisa
 cuál falta. Para probar el embed real: `pnpm --filter widget build`, `npx serve apps/widget/dist`
 y abrir `/test.html`. Ahí aparecen los dos bots del seed.
 

@@ -11,3 +11,10 @@ services:
       - "5432:5432"
     volumes:
       - ./.docker-data/postgres:/var/lib/postgresql/data
+    # Lets `docker compose up --wait` (pnpm db:up) return only once Postgres
+    # accepts connections, so migrations never race the database start.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alturia -d alturia"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
