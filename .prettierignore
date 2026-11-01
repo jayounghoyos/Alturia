@@ -1,0 +1,14 @@
+# Generated / vendored
+node_modules
+dist
+coverage
+pnpm-lock.yaml
+apps/api/prisma/migrations
+.docker-data
+
+# Docs and design assets are formatted by hand
+*.md
+*.pen
+*.pdf
+mockups
+designs

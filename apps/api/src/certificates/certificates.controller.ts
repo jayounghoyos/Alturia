@@ -13,6 +13,7 @@ import {
 } from "@alturia/shared";
 import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Public } from "../auth/public.decorator";
+import { RequiresFeature } from "../bots/requires-feature.decorator";
 import { CertificatesService } from "./certificates.service";
 
 /** Public — no auth. Mockups A1-A4: lookup by national ID (cédula). */
@@ -21,6 +22,7 @@ import { CertificatesService } from "./certificates.service";
 export class CertificatesController {
   constructor(private readonly certificates: CertificatesService) {}
 
+  @RequiresFeature("CERTIFICATES")
   @Get(":nationalId")
   async lookup(
     @Param("nationalId", new ZodValidationPipe(NationalIdSchema))
@@ -33,6 +35,7 @@ export class CertificatesController {
     return result;
   }
 
+  @RequiresFeature("QR")
   @Post("qr")
   async lookupByQr(
     @Body(new ZodValidationPipe(QrLookupSchema)) body: QrLookupInput,

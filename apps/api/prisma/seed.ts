@@ -8,23 +8,70 @@ const prisma = new PrismaClient();
 // data faithful to the domain (see prisma/README.md). Idempotent: re-running
 // this must not duplicate anything — every row uses a fixed id or an upsert
 // on a stable unique field instead of a bare `create`.
+//
+// Bots and admins are create-only (`update: {}`): Render runs this on every
+// deploy, and it must never overwrite what a client edited in the dashboard.
+// Asis Altura's bot ("bot_default") is created by its migration, so existing
+// conversations could be backfilled into it.
 
-async function seedAdmin() {
-  const email = "admin@asisaltura.co";
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "changeme123";
-  const passwordHash = await bcrypt.hash(password, 10);
+const seedPassword = process.env.SEED_ADMIN_PASSWORD ?? "changeme123";
 
+async function seedAdmin(email: string, name: string, botId: string) {
   await prisma.adminUser.upsert({
     where: { email },
     update: {},
-    create: { email, passwordHash, name: "Asis Altura Admin" },
+    create: {
+      email,
+      name,
+      botId,
+      passwordHash: await bcrypt.hash(seedPassword, 10),
+    },
   });
+  console.log(
+    process.env.SEED_ADMIN_PASSWORD
+      ? `Seeded admin login: ${email} (password from SEED_ADMIN_PASSWORD)`
+      : `Seeded admin login: ${email} / ${seedPassword} (default dev password — override with SEED_ADMIN_PASSWORD)`,
+  );
+}
 
-  if (!process.env.SEED_ADMIN_PASSWORD) {
-    console.log(`Seeded admin login: ${email} / ${password} (default dev password — override with SEED_ADMIN_PASSWORD)`);
-  } else {
-    console.log(`Seeded admin login: ${email} (password from SEED_ADMIN_PASSWORD)`);
-  }
+/**
+ * A second, generic client so multi-bot behaviour can be shown and tested:
+ * its own brand, persona and admin, and only the generic features (no access
+ * to Asis Altura's workers or courses).
+ */
+async function seedDemoBot() {
+  await prisma.bot.upsert({
+    where: { id: "bot_demo" },
+    update: {},
+    create: {
+      id: "bot_demo",
+      slug: "demo",
+      publicKey: "pk_demo",
+      name: "Café Ladera",
+      greeting:
+        "¡Hola! Soy el asistente de Café Ladera. Pregúntame por horarios, pedidos o domicilios.",
+      theme: {
+        primaryColor: "#7C2D12",
+        position: "bottom-left",
+        avatarPreset: "chat",
+      },
+      persona: `Eres el asistente virtual de Café Ladera, una tienda de café de especialidad en Medellín.
+
+Reglas de comportamiento:
+- Responde siempre en español, de forma breve, clara y amable.
+- Nunca inventes precios, horarios ni promociones que no estén en el contexto; si no lo sabes, dilo y ofrece hablar con una persona del equipo.`,
+      escalationKeywords: ["asesor", "humano", "persona", "queja", "reclamo"],
+      escalationReply:
+        "Listo, le avisé al equipo de Café Ladera. Una persona te va a responder por aquí mismo.",
+      faqQuickQuestions: [
+        "¿Cuál es el horario?",
+        "¿Hacen domicilios?",
+        "¿Venden café en grano?",
+      ],
+      features: ["FAQ", "HUMAN_HANDOFF"],
+      allowedOrigins: [],
+    },
+  });
 }
 
 async function seedCourses() {
@@ -97,13 +144,21 @@ async function seedWorkersAndCertificates() {
   const worker1 = await prisma.worker.upsert({
     where: { nationalId: "1036482117" },
     update: {},
-    create: { nationalId: "1036482117", name: "Carlos Restrepo", phone: "3001234567" },
+    create: {
+      nationalId: "1036482117",
+      name: "Carlos Restrepo",
+      phone: "3001234567",
+    },
   });
 
   const worker2 = await prisma.worker.upsert({
     where: { nationalId: "1234567890" },
     update: {},
-    create: { nationalId: "1234567890", name: "María Gómez", phone: "3009876543" },
+    create: {
+      nationalId: "1234567890",
+      name: "María Gómez",
+      phone: "3009876543",
+    },
   });
 
   // worker1: both certificates valid — the "everything's fine" demo path.
@@ -172,7 +227,9 @@ async function seedWorkersAndCertificates() {
 }
 
 async function main() {
-  await seedAdmin();
+  await seedAdmin("admin@asisaltura.co", "Asis Altura Admin", "bot_default");
+  await seedDemoBot();
+  await seedAdmin("admin@cafeladera.co", "Café Ladera Admin", "bot_demo");
   await seedCourses();
   await seedCourseSessions();
   await seedWorkersAndCertificates();

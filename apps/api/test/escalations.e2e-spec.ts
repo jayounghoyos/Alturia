@@ -141,6 +141,14 @@ describe("Admin login and escalation inbox (e2e)", () => {
       expect(conversation.status).toBe("CLOSED");
     });
 
+    it("responds 400 for a malformed escalation id", async () => {
+      const token = await loginToken();
+      await request(ctx.app.getHttpServer())
+        .get("/api/escalations/not%20an%20id")
+        .set("Authorization", `Bearer ${token}`)
+        .expect(400);
+    });
+
     it("responds 404 when replying to an escalation that does not exist", async () => {
       const token = await loginToken();
       await request(ctx.app.getHttpServer())

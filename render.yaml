@@ -47,17 +47,8 @@ services:
       # for a current replacement.
       - key: OPENROUTER_CHAT_MODEL
         value: nvidia/nemotron-3-nano-30b-a3b:free
-      # EMBEDDING_PROVIDER is required at boot (the LlmModule factory validates
-      # it exists) but nothing actually calls .embed() yet — KnowledgeModule
-      # does plain context-stuffing, not chunked/embedded RAG. Left as
-      # "ollama" even in prod on purpose: it's genuinely never invoked, so
-      # there's no reason to require an OpenAI account (and its billing info)
-      # just to satisfy this unused check. Revisit once real RAG lands.
-      - key: EMBEDDING_PROVIDER
-        value: ollama
-      - key: OLLAMA_BASE_URL
-        value: http://localhost:11434
-      - key: OLLAMA_EMBED_MODEL
-        value: nomic-embed-text
+      # EMBEDDING_PROVIDER is optional (defaults to ollama) because nothing
+      # calls .embed() yet — KnowledgeModule does plain context stuffing.
+      # Set it, plus OPENAI_API_KEY, once real retrieval lands.
       - key: SEED_ADMIN_PASSWORD
         sync: false
