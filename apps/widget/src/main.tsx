@@ -1,35 +1,26 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import widgetStyles from "./widget.css?inline";
-import { ChatWidget } from "./ChatWidget";
+import { readEmbedConfig } from "./embed/embed-config";
+import { mountWidget } from "./mount";
 
 /**
- * Embed entry point. Usage on asisaltura.com:
- *   <script src="https://cdn.alturia.app/widget.js" defer></script>
- *
- * One fixed bot — no data-client-id, since there's no multi-tenancy.
+ * Embed entry point (built as the IIFE widget.js):
+ *   <script src="https://alturia-widget.vercel.app/widget.js" data-bot="pk_..." defer></script>
+ * Without data-bot the API serves its default bot, so embeds from before
+ * multi-bot support keep working.
  */
-mount();
 
-function mount() {
+// Must be read synchronously at load: document.currentScript is null later.
+const embed = readEmbedConfig(
+  document.currentScript,
+  import.meta.env.VITE_WIDGET_API_BASE_URL,
+);
+
+function start() {
   const host = document.createElement("div");
-  host.id = "alturia-widget";
+  host.id = embed.botKey ? `alturia-widget-${embed.botKey}` : "alturia-widget";
   document.body.appendChild(host);
-
-  // Shadow DOM: the host page's CSS never gets in, ours never leaks out.
-  const shadowRoot = host.attachShadow({ mode: "open" });
-
-  const styleEl = document.createElement("style");
-  styleEl.textContent = widgetStyles;
-  shadowRoot.appendChild(styleEl);
-
-  const mountPoint = document.createElement("div");
-  mountPoint.className = "alturia-widget-root";
-  shadowRoot.appendChild(mountPoint);
-
-  createRoot(mountPoint).render(
-    <StrictMode>
-      <ChatWidget />
-    </StrictMode>,
-  );
+  mountWidget(host, { mode: "live", embed });
 }
+
+// A script in <head> without defer runs before <body> exists.
+if (document.body) start();
+else document.addEventListener("DOMContentLoaded", start, { once: true });

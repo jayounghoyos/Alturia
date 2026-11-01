@@ -1,3 +1,5 @@
+import { es } from "../i18n/es";
+
 export function StatusBadge({ status }: { status: "VALID" | "EXPIRED" }) {
   const isValid = status === "VALID";
   return (
@@ -9,7 +11,7 @@ export function StatusBadge({ status }: { status: "VALID" | "EXPIRED" }) {
       <span
         className={`h-1.5 w-1.5 rounded-full ${isValid ? "bg-ok" : "bg-danger"}`}
       />
-      {isValid ? "VIGENTE" : "VENCIDO"}
+      {isValid ? es.certificates.card.valid : es.certificates.card.expired}
     </span>
   );
 }

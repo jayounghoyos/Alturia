@@ -21,7 +21,7 @@ export const SELF_SERVICE_FEATURES = [
   "HUMAN_HANDOFF",
 ] as const satisfies readonly BotFeature[];
 
-/** Built-in avatar icons; their SVG paths live in ../branding/icons.ts. */
+/** Built-in avatar icons. Each app maps them to a Lucide icon (widget: src/icons.tsx). */
 export const AVATAR_PRESETS = [
   "chat",
   "headset",
@@ -32,6 +32,16 @@ export const AVATAR_PRESETS = [
 ] as const;
 export const AvatarPresetSchema = z.enum(AVATAR_PRESETS);
 export type AvatarPreset = z.infer<typeof AvatarPresetSchema>;
+
+/** Labels for the dashboard's preset picker. */
+export const AVATAR_PRESET_LABELS: Record<AvatarPreset, string> = {
+  chat: "Conversación",
+  headset: "Soporte",
+  "hard-hat": "Casco",
+  shield: "Escudo",
+  spark: "Destello",
+  building: "Empresa",
+};
 
 export const HexColorSchema = z
   .string()

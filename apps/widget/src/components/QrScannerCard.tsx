@@ -1,108 +1,122 @@
 import { BrowserMultiFormatReader } from "@zxing/browser";
-import { useEffect, useRef, useState, type ClipboardEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { es } from "../i18n/es";
 
+const t = es.qr.scanner;
+
+/**
+ * Reads a certificate QR from the camera, a pasted screenshot (Ctrl + V
+ * anywhere in the widget) or an uploaded image.
+ */
 export function QrScannerCard({
   onClose,
   onFallback,
   onDecoded,
 }: {
   onClose: () => void;
-  onFallback: () => void;
+  /** Absent when the bot can't look certificates up by cédula. */
+  onFallback?: () => void;
   onDecoded: (payload: string) => void;
 }) {
+  const cardRef = useRef<HTMLElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const decodedRef = useRef(onDecoded);
   const [error, setError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
 
   useEffect(() => {
+    decodedRef.current = onDecoded;
+  }, [onDecoded]);
+
+  // Start the camera once when the card mounts; stop it on unmount.
+  useEffect(() => {
     const reader = new BrowserMultiFormatReader();
     readerRef.current = reader;
-    setReading(true);
+    const video = videoRef.current;
 
-    if (!navigator.mediaDevices?.getUserMedia || !videoRef.current) {
-      setError("Este navegador no permite acceder a la cámara.");
-      setReading(false);
+    if (!navigator.mediaDevices?.getUserMedia || !video) {
+      queueMicrotask(() => setError(t.noCamera));
       return;
     }
 
+    let cancelled = false;
+    queueMicrotask(() => setReading(true));
     reader
-      .decodeFromVideoDevice(
-        undefined,
-        videoRef.current,
-        (result, decodeError) => {
-          if (result) {
-            stopCamera();
-            onDecoded(result.getText());
-          } else if (decodeError && !isExpectedDecodeError(decodeError)) {
-            setError("No pudimos leer el código QR de la cámara.");
-          }
-        },
-      )
+      .decodeFromVideoDevice(undefined, video, (result, decodeError) => {
+        if (result) {
+          stopCamera(video, controlsRef);
+          decodedRef.current(result.getText());
+        } else if (decodeError && !isExpectedDecodeError(decodeError)) {
+          setError(t.cameraError);
+        }
+      })
       .then((controls) => {
-        controlsRef.current = controls;
+        if (cancelled) controls.stop();
+        else controlsRef.current = controls;
       })
       .catch(() => {
-        setError("No pudimos acceder a tu cámara.");
+        setError(t.cameraDenied);
         setReading(false);
       });
 
-    return () => stopCamera();
-    // The scanner starts once when this card mounts.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+      stopCamera(video, controlsRef);
+    };
   }, []);
 
-  function stopCamera() {
-    controlsRef.current?.stop();
-    controlsRef.current = null;
-    if (videoRef.current?.srcObject instanceof MediaStream) {
-      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setReading(false);
-  }
+  // Paste is listened for on the whole widget, so the visitor can press
+  // Ctrl + V wherever focus is (the text box, a button) inside the chat.
+  useEffect(() => {
+    const root = cardRef.current?.getRootNode();
+    if (!root) return;
+    const onPaste = (event: Event) => {
+      const items = (event as ClipboardEvent).clipboardData?.items;
+      const image = Array.from(items ?? [])
+        .find((item) => item.type.startsWith("image/"))
+        ?.getAsFile();
+      if (image) {
+        event.preventDefault();
+        void readFile(image);
+      }
+    };
+    root.addEventListener("paste", onPaste);
+    return () => root.removeEventListener("paste", onPaste);
+  });
 
-  async function handleFile(file: File | undefined) {
+  async function readFile(file: File | undefined) {
     if (!file || !readerRef.current) return;
     setError(null);
-    setReading(true);
     const imageUrl = URL.createObjectURL(file);
     try {
       const result = await readerRef.current.decodeFromImageUrl(imageUrl);
-      stopCamera();
+      stopCamera(videoRef.current, controlsRef);
       onDecoded(result.getText());
     } catch {
-      setError("No encontramos un código QR legible en esa imagen.");
-      setReading(false);
+      setError(t.unreadable);
     } finally {
       URL.revokeObjectURL(imageUrl);
     }
   }
 
-  function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
-    const image = Array.from(event.clipboardData.items)
-      .find((item) => item.type.startsWith("image/"))
-      ?.getAsFile();
-    if (image) {
-      event.preventDefault();
-      void handleFile(image);
-    }
-  }
-
-  function handleClose() {
-    stopCamera();
+  function close() {
+    stopCamera(videoRef.current, controlsRef);
     onClose();
   }
 
+  const secondary =
+    "rounded-xl border border-line py-2 text-sm font-semibold text-ink hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-primary";
+
   return (
-    <div
-      className="w-full rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
-      onPaste={handlePaste}
-      tabIndex={0}
+    <section
+      ref={cardRef}
+      aria-label={t.region}
+      className="w-full rounded-2xl border border-line-soft bg-surface p-4 shadow-sm"
     >
-      <div className="overflow-hidden rounded-xl bg-slate-900">
+      <div className="overflow-hidden rounded-xl bg-video">
         <video
           ref={videoRef}
           autoPlay
@@ -112,40 +126,57 @@ export function QrScannerCard({
         />
       </div>
       <p className="mt-2 text-center text-xs text-faint">
-        {reading
-          ? "Apunta la cámara al código QR o pega una captura dentro de este recuadro."
-          : "Puedes pegar una captura o seleccionar un PNG/JPG con el código QR."}
+        {reading ? t.aiming : t.idle}
       </p>
-      {error && <p className="mt-2 text-center text-sm text-warn">{error}</p>}
+      {error && (
+        <p role="alert" className="mt-2 text-center text-sm text-warn">
+          {error}
+        </p>
+      )}
       <input
         ref={fileRef}
         type="file"
         accept="image/png,image/jpeg,image/webp"
-        className="hidden"
-        onChange={(event) => void handleFile(event.target.files?.[0])}
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(event) => void readFile(event.target.files?.[0])}
       />
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className={`mt-3 grid gap-2 ${onFallback ? "grid-cols-2" : ""}`}>
         <button
+          type="button"
           onClick={() => fileRef.current?.click()}
-          className="rounded-xl bg-primary py-2 text-sm font-semibold text-white hover:opacity-90"
+          className="rounded-xl bg-primary py-2 text-sm font-semibold text-primary-fg hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
-          Subir imagen
+          {t.upload}
         </button>
-        <button
-          onClick={onFallback}
-          className="rounded-xl border border-slate-200 py-2 text-sm font-semibold text-ink hover:bg-slate-50"
-        >
-          Usar cédula
-        </button>
+        {onFallback && (
+          <button type="button" onClick={onFallback} className={secondary}>
+            {t.useId}
+          </button>
+        )}
       </div>
       <button
-        onClick={handleClose}
-        className="mt-2 w-full rounded-xl border border-slate-200 py-2 text-sm font-semibold text-ink hover:bg-slate-50"
+        type="button"
+        onClick={close}
+        className={`mt-2 w-full ${secondary}`}
       >
-        Cerrar lector
+        {t.close}
       </button>
-    </div>
+    </section>
   );
+}
+
+function stopCamera(
+  video: HTMLVideoElement | null,
+  controls: { current: { stop: () => void } | null },
+) {
+  controls.current?.stop();
+  controls.current = null;
+  if (video?.srcObject instanceof MediaStream) {
+    video.srcObject.getTracks().forEach((track) => track.stop());
+    video.srcObject = null;
+  }
 }
 
 function isExpectedDecodeError(error: unknown): boolean {

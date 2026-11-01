@@ -1,25 +1,39 @@
 @import "tailwindcss";
 
-/* Design tokens extracted from the real asistalturas.co site via computed
-   styles (getComputedStyle on their live headings/buttons/underlines) —
-   the client never sent a brand manual, so this is the closest thing to one.
-   primary #0180E1 and accent #FEC456 are pulled directly from their CSS
-   (link/heading color and the underline/input-highlight color respectively).
-   Their site uses a plain system-font stack, no custom typeface — matched
-   here rather than the invented Plus Jakarta Sans from the earlier mockups. */
+/* Scan this package's sources explicitly: the dashboard imports the widget
+   for its live preview, and Tailwind would otherwise only scan the
+   dashboard's own files. */
+@source "./";
+
+/* Design tokens. Brand values are defaults only: theme/theme.ts overrides
+   --color-primary, --color-primary-fg and --color-primary-soft on the mount
+   element from each bot's config at runtime, so one build serves every
+   client. Neutrals stay fixed so every brand colour sits on the same calm
+   surface. */
 @theme {
   --color-primary: #0180e1;
-  --color-accent: #fec456;
+  --color-primary-fg: #ffffff;
+  --color-primary-soft: #e6f2fc;
+
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
   --color-bubble: #f4f5f7;
+  --color-line: #e2e8f0;
+  --color-line-soft: #f1f5f9;
+  --color-icon: #94a3b8;
+  --color-video: #0f172a;
+
   --color-ok: #16a34a;
   --color-ok-bg: #dcfce7;
   --color-warn: #b45309;
   --color-warn-bg: #fef3e2;
   --color-danger: #dc2626;
   --color-danger-bg: #fee2e2;
+
   --color-ink: #0b0f14;
   --color-muted: #6b7280;
-  --color-faint: #9aa1ac;
+  --color-faint: #6f7682;
+
   --font-sans:
     -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
@@ -32,4 +46,28 @@
 .alturia-widget-root {
   all: initial;
   font-family: var(--font-sans);
+}
+
+/* Tailwind v4 gives its shadow/ring variables initial values through
+   @property, and browsers ignore @property inside a shadow root. Without
+   these, every shadow-* and ring-* utility resolves to an invalid value and
+   is dropped. Declared here so nothing is registered on the host page. */
+@layer base {
+  :host,
+  *,
+  ::before,
+  ::after {
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-color: initial;
+    --tw-inset-shadow: 0 0 #0000;
+    --tw-inset-shadow-color: initial;
+    --tw-ring-color: initial;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-inset-ring-color: initial;
+    --tw-inset-ring-shadow: 0 0 #0000;
+    --tw-ring-inset: initial;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-offset-shadow: 0 0 #0000;
+  }
 }

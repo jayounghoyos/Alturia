@@ -1,28 +1,36 @@
-import { CloseIcon, HardHatIcon } from "../icons";
+import type { BotConfig } from "@alturia/shared";
+import { es } from "../i18n/es";
+import { CloseIcon } from "../icons";
+import { BotAvatar } from "./BotAvatar";
 
 export function WidgetHeader({
-  name,
+  config,
+  titleId,
+  resolveUrl,
   onClose,
 }: {
-  name: string;
+  config: BotConfig;
+  titleId: string;
+  resolveUrl: (path: string) => string;
   onClose: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">
-        <HardHatIcon className="h-5 w-5" />
-      </span>
-      <div className="flex-1">
-        <p className="font-bold text-ink">{name}</p>
+    <div className="flex items-center gap-3 border-b border-line-soft px-4 py-3">
+      <BotAvatar config={config} resolveUrl={resolveUrl} />
+      <div className="min-w-0 flex-1">
+        <h2 id={titleId} className="truncate font-bold text-ink">
+          {config.name}
+        </h2>
         <p className="flex items-center gap-1.5 text-xs text-muted">
           <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-          En línea · Responde al instante
+          {es.header.status}
         </p>
       </div>
       <button
+        type="button"
         onClick={onClose}
-        aria-label="Cerrar chat"
-        className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        aria-label={es.header.close}
+        className="rounded-full p-1 text-icon hover:bg-line-soft hover:text-muted focus-visible:outline-2 focus-visible:outline-primary"
       >
         <CloseIcon className="h-5 w-5" />
       </button>

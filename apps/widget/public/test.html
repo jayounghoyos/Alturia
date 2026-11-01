@@ -1,19 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <title>Alturia widget — embed test page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AlturiaBot — página de prueba del embed</title>
   </head>
   <body>
-    <h1>asisaltura.com simulation</h1>
+    <h1>Página de prueba del widget</h1>
     <p>
-      Serve this folder after <code>pnpm --filter widget build</code> (e.g.
-      <code>npx serve apps/widget/dist</code>) and open
-      <code>/test.html</code> — the floating chat button should appear
-      bottom-right. The chat copy itself renders in Spanish (real audience:
-      Colombian workers/employers), only this test page's own text is English.
+      Sirve esta carpeta después de <code>pnpm --filter widget build</code> (por
+      ejemplo <code>npx serve apps/widget/dist</code>) y abre
+      <code>/test.html</code>. Aparecen dos bots: Asis Altura (abajo a la
+      derecha, sin <code>data-bot</code>, como los embeds anteriores) y Café
+      Ladera (abajo a la izquierda, bot de demostración del seed).
     </p>
 
     <script src="./widget.js" defer></script>
+    <script src="./widget.js" data-bot="pk_demo" defer></script>
   </body>
 </html>
