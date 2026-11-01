@@ -23,7 +23,10 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-async function authedFetch(path: string, init?: RequestInit): Promise<Response> {
+async function authedFetch(
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: { ...init?.headers, Authorization: `Bearer ${getToken()}` },
@@ -35,14 +38,19 @@ async function authedFetch(path: string, init?: RequestInit): Promise<Response> 
   return res;
 }
 
-export async function login(email: string, password: string): Promise<LoginResponse> {
+export async function login(
+  email: string,
+  password: string,
+): Promise<LoginResponse> {
   const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as { message?: string } | null;
+    const body = (await res.json().catch(() => null)) as {
+      message?: string;
+    } | null;
     throw new Error(body?.message ?? `Login failed (${res.status})`);
   }
   const parsed = LoginResponseSchema.parse(await res.json());
@@ -56,13 +64,18 @@ export async function fetchEscalations(): Promise<EscalationRecord[]> {
   return z.array(EscalationRecordSchema).parse(await res.json());
 }
 
-export async function fetchEscalationDetail(id: string): Promise<EscalationDetail> {
+export async function fetchEscalationDetail(
+  id: string,
+): Promise<EscalationDetail> {
   const res = await authedFetch(`/api/escalations/${id}`);
   if (!res.ok) throw new Error(`Failed to load escalation (${res.status})`);
   return EscalationDetailSchema.parse(await res.json());
 }
 
-export async function replyToEscalation(id: string, content: string): Promise<MessageRecord> {
+export async function replyToEscalation(
+  id: string,
+  content: string,
+): Promise<MessageRecord> {
   const res = await authedFetch(`/api/escalations/${id}/reply`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -73,7 +86,9 @@ export async function replyToEscalation(id: string, content: string): Promise<Me
 }
 
 export async function resolveEscalation(id: string): Promise<void> {
-  const res = await authedFetch(`/api/escalations/${id}/resolve`, { method: "PATCH" });
+  const res = await authedFetch(`/api/escalations/${id}/resolve`, {
+    method: "PATCH",
+  });
   if (!res.ok) throw new Error(`Failed to resolve escalation (${res.status})`);
 }
 
@@ -83,7 +98,10 @@ export async function fetchKnowledge(): Promise<KnowledgeSourceRecord[]> {
   return z.array(KnowledgeSourceRecordSchema).parse(await res.json());
 }
 
-export async function uploadKnowledge(title: string, content: string): Promise<KnowledgeSourceRecord> {
+export async function uploadKnowledge(
+  title: string,
+  content: string,
+): Promise<KnowledgeSourceRecord> {
   const res = await authedFetch("/api/knowledge", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -9,7 +9,11 @@ function formatDate(iso: string): string {
   });
 }
 
-export function ConfirmationCard({ confirmation }: { confirmation: AppointmentConfirmation }) {
+export function ConfirmationCard({
+  confirmation,
+}: {
+  confirmation: AppointmentConfirmation;
+}) {
   return (
     <div className="w-full rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
       <div className="flex flex-col items-center text-center">

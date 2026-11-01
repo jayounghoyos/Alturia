@@ -49,20 +49,32 @@ export async function sendChatMessage(
 }
 
 /** Throws Error with message "NOT_FOUND" on 404 — callers render the friendly not-found bubble for that case. */
-export async function lookupCertificate(nationalId: string): Promise<CertificateLookupResponse> {
+export async function lookupCertificate(
+  nationalId: string,
+): Promise<CertificateLookupResponse> {
   const res = await fetch(`${API_BASE_URL}/api/certificates/${nationalId}`);
   if (res.status === 404) throw new Error("NOT_FOUND");
-  return parseOrThrow(res, CertificateLookupResponseSchema, "Certificate lookup");
+  return parseOrThrow(
+    res,
+    CertificateLookupResponseSchema,
+    "Certificate lookup",
+  );
 }
 
-export async function lookupCertificateByQr(payload: string): Promise<CertificateLookupResponse> {
+export async function lookupCertificateByQr(
+  payload: string,
+): Promise<CertificateLookupResponse> {
   const res = await fetch(`${API_BASE_URL}/api/certificates/qr`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ payload }),
   });
   if (res.status === 404) throw new Error("NOT_FOUND");
-  return parseOrThrow(res, CertificateLookupResponseSchema, "QR certificate lookup");
+  return parseOrThrow(
+    res,
+    CertificateLookupResponseSchema,
+    "QR certificate lookup",
+  );
 }
 
 export async function fetchCourses(): Promise<Course[]> {
@@ -70,9 +82,17 @@ export async function fetchCourses(): Promise<Course[]> {
   return parseOrThrow(res, z.array(CourseSchema), "Loading courses");
 }
 
-export async function fetchAvailability(courseId: string): Promise<AvailableSession[]> {
-  const res = await fetch(`${API_BASE_URL}/api/courses/${courseId}/availability`);
-  return parseOrThrow(res, z.array(AvailableSessionSchema), "Loading availability");
+export async function fetchAvailability(
+  courseId: string,
+): Promise<AvailableSession[]> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/courses/${courseId}/availability`,
+  );
+  return parseOrThrow(
+    res,
+    z.array(AvailableSessionSchema),
+    "Loading availability",
+  );
 }
 
 export async function createAppointment(
@@ -83,10 +103,16 @@ export async function createAppointment(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
   });
-  return parseOrThrow(res, AppointmentConfirmationSchema, "Booking appointment");
+  return parseOrThrow(
+    res,
+    AppointmentConfirmationSchema,
+    "Booking appointment",
+  );
 }
 
-export async function createEscalation(input: CreateEscalationInput): Promise<void> {
+export async function createEscalation(
+  input: CreateEscalationInput,
+): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/api/escalations`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -96,9 +122,15 @@ export async function createEscalation(input: CreateEscalationInput): Promise<vo
 }
 
 /** Polled after an escalation to pick up ADMIN replies typed from the dashboard. */
-export async function fetchConversationMessages(sessionId: string): Promise<MessageRecord[]> {
+export async function fetchConversationMessages(
+  sessionId: string,
+): Promise<MessageRecord[]> {
   const res = await fetch(`${API_BASE_URL}/api/chat/${sessionId}/messages`);
-  return parseOrThrow(res, z.array(MessageRecordSchema), "Loading conversation");
+  return parseOrThrow(
+    res,
+    z.array(MessageRecordSchema),
+    "Loading conversation",
+  );
 }
 
 /** One anonymous visitor per browser, reused across visits. */

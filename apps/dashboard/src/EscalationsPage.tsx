@@ -42,7 +42,9 @@ export function EscalationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-bold text-ink">Escalation inbox</h1>
-          <p className="text-sm text-muted">Open and in-progress cases from the chat</p>
+          <p className="text-sm text-muted">
+            Open and in-progress cases from the chat
+          </p>
         </div>
         <button
           onClick={load}
@@ -58,7 +60,9 @@ export function EscalationsPage() {
         {loading ? (
           <p className="p-6 text-sm text-muted">Loading…</p>
         ) : escalations.length === 0 ? (
-          <p className="p-6 text-sm text-muted">No open escalations right now.</p>
+          <p className="p-6 text-sm text-muted">
+            No open escalations right now.
+          </p>
         ) : (
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-muted">
@@ -78,12 +82,18 @@ export function EscalationsPage() {
                 >
                   <td className="max-w-xs px-4 py-3 text-ink">{e.reason}</td>
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[e.status]}`}>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[e.status]}`}
+                    >
                       {e.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted">{e.contactInfo ? e.contactInfo.name : "—"}</td>
-                  <td className="px-4 py-3 text-faint">{new Date(e.createdAt).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-muted">
+                    {e.contactInfo ? e.contactInfo.name : "—"}
+                  </td>
+                  <td className="px-4 py-3 text-faint">
+                    {new Date(e.createdAt).toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

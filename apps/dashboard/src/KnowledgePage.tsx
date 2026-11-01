@@ -29,7 +29,9 @@ export function KnowledgePage() {
       await uploadKnowledge(file.name.replace(/\.md$/i, ""), content);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload document");
+      setError(
+        err instanceof Error ? err.message : "Failed to upload document",
+      );
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -41,7 +43,9 @@ export function KnowledgePage() {
       await deleteKnowledge(id);
       load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete document");
+      setError(
+        err instanceof Error ? err.message : "Failed to delete document",
+      );
     }
   }
 
@@ -50,9 +54,9 @@ export function KnowledgePage() {
       <div>
         <h1 className="font-bold text-ink">Contexto del bot</h1>
         <p className="text-sm text-muted">
-          Sube un archivo .md con cómo quieres que se comporte el agente y qué debe saber
-          (precios, políticas, tono). Se agrega al prompt del chat — sin necesitar que el
-          cliente nos pase su manual de marca.
+          Sube un archivo .md con cómo quieres que se comporte el agente y qué
+          debe saber (precios, políticas, tono). Se agrega al prompt del chat —
+          sin necesitar que el cliente nos pase su manual de marca.
         </p>
       </div>
 
@@ -60,7 +64,9 @@ export function KnowledgePage() {
         <span className="font-semibold text-primary">
           {uploading ? "Subiendo…" : "Elegir archivo .md"}
         </span>
-        <span className="text-xs text-faint">Se reemplaza nada — puedes subir varios documentos</span>
+        <span className="text-xs text-faint">
+          Se reemplaza nada — puedes subir varios documentos
+        </span>
         <input
           ref={fileRef}
           type="file"
@@ -77,14 +83,21 @@ export function KnowledgePage() {
         {loading ? (
           <p className="p-6 text-sm text-muted">Loading…</p>
         ) : sources.length === 0 ? (
-          <p className="p-6 text-sm text-muted">Todavía no se ha subido ningún documento.</p>
+          <p className="p-6 text-sm text-muted">
+            Todavía no se ha subido ningún documento.
+          </p>
         ) : (
           <ul className="divide-y divide-slate-100">
             {sources.map((s) => (
-              <li key={s.id} className="flex items-center justify-between px-4 py-3">
+              <li
+                key={s.id}
+                className="flex items-center justify-between px-4 py-3"
+              >
                 <div className="min-w-0">
                   <p className="truncate font-medium text-ink">{s.title}</p>
-                  <p className="truncate text-xs text-faint">{s.content.slice(0, 100)}</p>
+                  <p className="truncate text-xs text-faint">
+                    {s.content.slice(0, 100)}
+                  </p>
                 </div>
                 <button
                   onClick={() => handleDelete(s.id)}

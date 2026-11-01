@@ -39,8 +39,14 @@ export function CertificateCard({
       <dl className="mt-3 space-y-2 text-sm">
         {isValid ? (
           <>
-            <Row label="Vigente hasta" value={formatDate(certificate.expiresAt)} />
-            <Row label="Días restantes" value={`${daysRemaining(certificate.expiresAt)} días`} />
+            <Row
+              label="Vigente hasta"
+              value={formatDate(certificate.expiresAt)}
+            />
+            <Row
+              label="Días restantes"
+              value={`${daysRemaining(certificate.expiresAt)} días`}
+            />
           </>
         ) : (
           <>
@@ -57,7 +63,9 @@ export function CertificateCard({
         <>
           <div className="mt-3 flex items-start gap-2 rounded-xl bg-warn-bg px-3 py-2.5 text-sm text-warn">
             <WarningIcon className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Enviamos un aviso automático 30 días antes de cada vencimiento.</span>
+            <span>
+              Enviamos un aviso automático 30 días antes de cada vencimiento.
+            </span>
           </div>
           <button
             onClick={onScheduleRetraining}

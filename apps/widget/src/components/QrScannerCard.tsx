@@ -29,14 +29,18 @@ export function QrScannerCard({
     }
 
     reader
-      .decodeFromVideoDevice(undefined, videoRef.current, (result, decodeError) => {
-        if (result) {
-          stopCamera();
-          onDecoded(result.getText());
-        } else if (decodeError && !isExpectedDecodeError(decodeError)) {
-          setError("No pudimos leer el código QR de la cámara.");
-        }
-      })
+      .decodeFromVideoDevice(
+        undefined,
+        videoRef.current,
+        (result, decodeError) => {
+          if (result) {
+            stopCamera();
+            onDecoded(result.getText());
+          } else if (decodeError && !isExpectedDecodeError(decodeError)) {
+            setError("No pudimos leer el código QR de la cámara.");
+          }
+        },
+      )
       .then((controls) => {
         controlsRef.current = controls;
       })
@@ -99,7 +103,13 @@ export function QrScannerCard({
       tabIndex={0}
     >
       <div className="overflow-hidden rounded-xl bg-slate-900">
-        <video ref={videoRef} autoPlay playsInline muted className="aspect-square w-full object-cover" />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="aspect-square w-full object-cover"
+        />
       </div>
       <p className="mt-2 text-center text-xs text-faint">
         {reading

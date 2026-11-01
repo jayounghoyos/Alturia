@@ -1,6 +1,12 @@
 import { CloseIcon, HardHatIcon } from "../icons";
 
-export function WidgetHeader({ name, onClose }: { name: string; onClose: () => void }) {
+export function WidgetHeader({
+  name,
+  onClose,
+}: {
+  name: string;
+  onClose: () => void;
+}) {
   return (
     <div className="flex items-center gap-3 border-b border-slate-100 px-4 py-3">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white">

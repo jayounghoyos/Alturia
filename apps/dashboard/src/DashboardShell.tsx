@@ -27,10 +27,16 @@ export function DashboardShell({ onLogout }: { onLogout: () => void }) {
             </div>
           </div>
           <nav className="flex gap-1 rounded-lg bg-slate-100 p-1">
-            <TabButton active={tab === "escalations"} onClick={() => setTab("escalations")}>
+            <TabButton
+              active={tab === "escalations"}
+              onClick={() => setTab("escalations")}
+            >
               Escalamientos
             </TabButton>
-            <TabButton active={tab === "knowledge"} onClick={() => setTab("knowledge")}>
+            <TabButton
+              active={tab === "knowledge"}
+              onClick={() => setTab("knowledge")}
+            >
               Conocimiento
             </TabButton>
           </nav>

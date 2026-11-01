@@ -39,9 +39,25 @@ import {
 
 type Msg =
   | { id: string; role: "user" | "bot"; kind: "text"; content: string }
-  | { id: string; role: "bot"; kind: "options"; options: { label: string; icon: ReactNode; onSelect: () => void }[] }
-  | { id: string; role: "bot"; kind: "certificate"; certificate: CertificateLookup; onScheduleRetraining?: () => void }
-  | { id: string; role: "bot"; kind: "confirmation"; confirmation: AppointmentConfirmation }
+  | {
+      id: string;
+      role: "bot";
+      kind: "options";
+      options: { label: string; icon: ReactNode; onSelect: () => void }[];
+    }
+  | {
+      id: string;
+      role: "bot";
+      kind: "certificate";
+      certificate: CertificateLookup;
+      onScheduleRetraining?: () => void;
+    }
+  | {
+      id: string;
+      role: "bot";
+      kind: "confirmation";
+      confirmation: AppointmentConfirmation;
+    }
   | { id: string; role: "bot"; kind: "qr" };
 
 type FlowStep =
@@ -49,9 +65,24 @@ type FlowStep =
   | { kind: "awaiting_cedula" }
   | { kind: "course_select" }
   | { kind: "session_select"; course: Course }
-  | { kind: "awaiting_booking_cedula"; course: Course; session: AvailableSession }
-  | { kind: "awaiting_name"; course: Course; session: AvailableSession; nationalId: string }
-  | { kind: "awaiting_phone"; course: Course; session: AvailableSession; nationalId: string; name: string }
+  | {
+      kind: "awaiting_booking_cedula";
+      course: Course;
+      session: AvailableSession;
+    }
+  | {
+      kind: "awaiting_name";
+      course: Course;
+      session: AvailableSession;
+      nationalId: string;
+    }
+  | {
+      kind: "awaiting_phone";
+      course: Course;
+      session: AvailableSession;
+      nationalId: string;
+      name: string;
+    }
   | {
       kind: "awaiting_consent";
       course: Course;
@@ -101,12 +132,18 @@ export function ChatWidget() {
   /** Starts (once) polling for ADMIN replies typed from the dashboard once a case is escalated. */
   async function startPollingForReplies() {
     if (pollTimer.current) return;
-    const baseline = await fetchConversationMessages(sessionId.current).catch(() => []);
+    const baseline = await fetchConversationMessages(sessionId.current).catch(
+      () => [],
+    );
     baseline.forEach((m) => seenMessageIds.current.add(m.id));
 
     pollTimer.current = window.setInterval(async () => {
-      const msgs = await fetchConversationMessages(sessionId.current).catch(() => []);
-      const newAdminMsgs = msgs.filter((m) => m.role === "ADMIN" && !seenMessageIds.current.has(m.id));
+      const msgs = await fetchConversationMessages(sessionId.current).catch(
+        () => [],
+      );
+      const newAdminMsgs = msgs.filter(
+        (m) => m.role === "ADMIN" && !seenMessageIds.current.has(m.id),
+      );
       msgs.forEach((m) => seenMessageIds.current.add(m.id));
       if (newAdminMsgs.length > 0) {
         setMessages((prev) => [
@@ -127,11 +164,17 @@ export function ChatWidget() {
   }, [messages, open]);
 
   function botText(content: string) {
-    setMessages((prev) => [...prev, { id: id(), role: "bot", kind: "text", content }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: id(), role: "bot", kind: "text", content },
+    ]);
   }
 
   function userText(content: string) {
-    setMessages((prev) => [...prev, { id: id(), role: "user", kind: "text", content }]);
+    setMessages((prev) => [
+      ...prev,
+      { id: id(), role: "user", kind: "text", content },
+    ]);
   }
 
   /** Shared by every call site that gets back a ChatResponse — keeps the
@@ -145,8 +188,13 @@ export function ChatWidget() {
     if (res.escalationOffered) void startPollingForReplies();
   }
 
-  function pushOptions(options: { label: string; icon: ReactNode; onSelect: () => void }[]) {
-    setMessages((prev) => [...prev, { id: id(), role: "bot", kind: "options", options }]);
+  function pushOptions(
+    options: { label: string; icon: ReactNode; onSelect: () => void }[],
+  ) {
+    setMessages((prev) => [
+      ...prev,
+      { id: id(), role: "bot", kind: "options", options },
+    ]);
   }
 
   function removeMessage(msgId: string) {
@@ -157,11 +205,31 @@ export function ChatWidget() {
     setStep({ kind: "idle" });
     botText("Selecciona una opción:");
     pushOptions([
-      { label: "Consultar un certificado", icon: <SearchIcon className="h-4 w-4" />, onSelect: startCertificateFlow },
-      { label: "Leer código QR del certificado", icon: <QrIcon className="h-4 w-4" />, onSelect: startQrScan },
-      { label: "Agendar un curso", icon: <SearchIcon className="h-4 w-4" />, onSelect: () => startBookingFlow() },
-      { label: "Preguntas frecuentes", icon: <SearchIcon className="h-4 w-4" />, onSelect: startFaq },
-      { label: "Hablar con un asesor", icon: <SearchIcon className="h-4 w-4" />, onSelect: startEscalation },
+      {
+        label: "Consultar un certificado",
+        icon: <SearchIcon className="h-4 w-4" />,
+        onSelect: startCertificateFlow,
+      },
+      {
+        label: "Leer código QR del certificado",
+        icon: <QrIcon className="h-4 w-4" />,
+        onSelect: startQrScan,
+      },
+      {
+        label: "Agendar un curso",
+        icon: <SearchIcon className="h-4 w-4" />,
+        onSelect: () => startBookingFlow(),
+      },
+      {
+        label: "Preguntas frecuentes",
+        icon: <SearchIcon className="h-4 w-4" />,
+        onSelect: startFaq,
+      },
+      {
+        label: "Hablar con un asesor",
+        icon: <SearchIcon className="h-4 w-4" />,
+        onSelect: startEscalation,
+      },
     ]);
   }
 
@@ -207,7 +275,9 @@ export function ChatWidget() {
   }
 
   function startCertificateFlow() {
-    botText("Perfecto. Escribe el número de cédula del trabajador para consultar el estado de su certificación.");
+    botText(
+      "Perfecto. Escribe el número de cédula del trabajador para consultar el estado de su certificación.",
+    );
     botText("Solo dígitos, sin puntos ni comas (8 a 10 caracteres).");
     setStep({ kind: "awaiting_cedula" });
   }
@@ -244,17 +314,29 @@ export function ChatWidget() {
       }
     } catch (err) {
       if (err instanceof Error && err.message === "NOT_FOUND") {
-        botText("No encontré ningún certificado asociado a ese número de documento.");
+        botText(
+          "No encontré ningún certificado asociado a ese número de documento.",
+        );
       } else {
-        botText("Tuvimos un problema consultando el certificado. Intenta de nuevo en un momento.");
+        botText(
+          "Tuvimos un problema consultando el certificado. Intenta de nuevo en un momento.",
+        );
       }
     } finally {
       setSending(false);
     }
     botText("¿Deseas hacer algo más?");
     pushOptions([
-      { label: "Consultar otra cédula", icon: <SearchIcon className="h-4 w-4" />, onSelect: startCertificateFlow },
-      { label: "Volver al menú principal", icon: <ArrowLeftIcon className="h-4 w-4" />, onSelect: showMainMenu },
+      {
+        label: "Consultar otra cédula",
+        icon: <SearchIcon className="h-4 w-4" />,
+        onSelect: startCertificateFlow,
+      },
+      {
+        label: "Volver al menú principal",
+        icon: <ArrowLeftIcon className="h-4 w-4" />,
+        onSelect: showMainMenu,
+      },
     ]);
     setStep({ kind: "idle" });
   }
@@ -263,7 +345,8 @@ export function ChatWidget() {
     setSending(true);
     try {
       const courses = await fetchCourses();
-      const preselected = preselectCourseId && courses.find((c) => c.id === preselectCourseId);
+      const preselected =
+        preselectCourseId && courses.find((c) => c.id === preselectCourseId);
       if (preselected) {
         await goToSessionSelect(preselected);
         return;
@@ -278,7 +361,9 @@ export function ChatWidget() {
       );
       setStep({ kind: "course_select" });
     } catch {
-      botText("No pude cargar los cursos disponibles. Intenta de nuevo en un momento.");
+      botText(
+        "No pude cargar los cursos disponibles. Intenta de nuevo en un momento.",
+      );
     } finally {
       setSending(false);
     }
@@ -289,7 +374,9 @@ export function ChatWidget() {
     try {
       const sessions = await fetchAvailability(course.id);
       if (sessions.length === 0) {
-        botText(`No hay cupos disponibles para "${course.name}" por ahora. Escríbenos y te avisamos apenas se abra un cupo.`);
+        botText(
+          `No hay cupos disponibles para "${course.name}" por ahora. Escríbenos y te avisamos apenas se abra un cupo.`,
+        );
         showMainMenu();
         return;
       }
@@ -308,7 +395,9 @@ export function ChatWidget() {
       );
       setStep({ kind: "session_select", course });
     } catch {
-      botText("No pude cargar la disponibilidad. Intenta de nuevo en un momento.");
+      botText(
+        "No pude cargar la disponibilidad. Intenta de nuevo en un momento.",
+      );
     } finally {
       setSending(false);
     }
@@ -325,10 +414,18 @@ export function ChatWidget() {
       return;
     }
     botText("¿Cuál es tu nombre completo?");
-    setStep({ kind: "awaiting_name", course: current.course, session: current.session, nationalId: parsed.data });
+    setStep({
+      kind: "awaiting_name",
+      course: current.course,
+      session: current.session,
+      nationalId: parsed.data,
+    });
   }
 
-  function handleNameSubmit(name: string, current: Extract<FlowStep, { kind: "awaiting_name" }>) {
+  function handleNameSubmit(
+    name: string,
+    current: Extract<FlowStep, { kind: "awaiting_name" }>,
+  ) {
     userText(name);
     botText("¿Cuál es tu número de teléfono de contacto?");
     setStep({
@@ -340,7 +437,10 @@ export function ChatWidget() {
     });
   }
 
-  function handlePhoneSubmit(phone: string, current: Extract<FlowStep, { kind: "awaiting_phone" }>) {
+  function handlePhoneSubmit(
+    phone: string,
+    current: Extract<FlowStep, { kind: "awaiting_phone" }>,
+  ) {
     userText(phone);
     botText(
       "Antes de confirmar, necesitamos tu autorización para guardar estos datos de contacto (Ley 1581 de 2012).",
@@ -393,12 +493,21 @@ export function ChatWidget() {
       });
       void course;
       botText("¡Listo! Tu cupo quedó reservado.");
-      setMessages((prev) => [...prev, { id: id(), role: "bot", kind: "confirmation", confirmation }]);
+      setMessages((prev) => [
+        ...prev,
+        { id: id(), role: "bot", kind: "confirmation", confirmation },
+      ]);
       pushOptions([
-        { label: "Volver al menú principal", icon: <ArrowLeftIcon className="h-4 w-4" />, onSelect: showMainMenu },
+        {
+          label: "Volver al menú principal",
+          icon: <ArrowLeftIcon className="h-4 w-4" />,
+          onSelect: showMainMenu,
+        },
       ]);
     } catch {
-      botText("No pudimos confirmar tu cita — puede que el cupo ya no esté disponible. Intenta con otra fecha.");
+      botText(
+        "No pudimos confirmar tu cita — puede que el cupo ya no esté disponible. Intenta con otra fecha.",
+      );
       showMainMenu();
     } finally {
       setSending(false);
@@ -406,12 +515,18 @@ export function ChatWidget() {
   }
 
   function startFaq() {
-    botText("Puedo resolver dudas frecuentes al instante. Elige una o escribe tu pregunta:");
+    botText(
+      "Puedo resolver dudas frecuentes al instante. Elige una o escribe tu pregunta:",
+    );
     const icons = [InfoIcon, DocumentIcon, PinIcon];
     pushOptions(
       FAQ_QUESTIONS.map((q, i) => {
         const Icon = icons[i];
-        return { label: q, icon: <Icon className="h-4 w-4" />, onSelect: () => askFaq(q) };
+        return {
+          label: q,
+          icon: <Icon className="h-4 w-4" />,
+          onSelect: () => askFaq(q),
+        };
       }),
     );
     setStep({ kind: "idle" });
@@ -424,7 +539,9 @@ export function ChatWidget() {
       const res = await sendChatMessage(sessionId.current, question);
       handleChatResponse(res);
     } catch {
-      botText("Tuvimos un problema respondiendo. Intenta de nuevo en un momento.");
+      botText(
+        "Tuvimos un problema respondiendo. Intenta de nuevo en un momento.",
+      );
     } finally {
       setSending(false);
     }
@@ -435,17 +552,26 @@ export function ChatWidget() {
     try {
       await createEscalation({
         sessionId: sessionId.current,
-        reason: "El usuario pidió hablar con un asesor desde el menú principal.",
+        reason:
+          "El usuario pidió hablar con un asesor desde el menú principal.",
       });
-      botText("Listo, ya avisé al equipo de Asis Altura y un asesor va a revisar tu caso pronto.");
+      botText(
+        "Listo, ya avisé al equipo de Asis Altura y un asesor va a revisar tu caso pronto.",
+      );
       void startPollingForReplies();
     } catch {
-      botText("No pude conectar con el equipo en este momento. Intenta de nuevo en un momento.");
+      botText(
+        "No pude conectar con el equipo en este momento. Intenta de nuevo en un momento.",
+      );
     } finally {
       setSending(false);
     }
     pushOptions([
-      { label: "Volver al menú principal", icon: <ArrowLeftIcon className="h-4 w-4" />, onSelect: showMainMenu },
+      {
+        label: "Volver al menú principal",
+        icon: <ArrowLeftIcon className="h-4 w-4" />,
+        onSelect: showMainMenu,
+      },
     ]);
   }
 
@@ -455,7 +581,8 @@ export function ChatWidget() {
     setInput("");
 
     if (step.kind === "awaiting_cedula") return handleCedulaSubmit(text);
-    if (step.kind === "awaiting_booking_cedula") return handleBookingCedulaSubmit(text, step);
+    if (step.kind === "awaiting_booking_cedula")
+      return handleBookingCedulaSubmit(text, step);
     if (step.kind === "awaiting_name") return handleNameSubmit(text, step);
     if (step.kind === "awaiting_phone") return handlePhoneSubmit(text, step);
 
@@ -468,7 +595,9 @@ export function ChatWidget() {
       const res = await sendChatMessage(sessionId.current, text);
       handleChatResponse(res);
     } catch {
-      botText("Tuvimos un problema respondiendo. Intenta de nuevo en un momento.");
+      botText(
+        "Tuvimos un problema respondiendo. Intenta de nuevo en un momento.",
+      );
     } finally {
       setSending(false);
     }
@@ -478,22 +607,30 @@ export function ChatWidget() {
   if (!config) return null; // still loading
 
   const primary = config.theme.primaryColor;
-  const positionClass = config.theme.position === "bottom-left" ? "left-5" : "right-5";
+  const positionClass =
+    config.theme.position === "bottom-left" ? "left-5" : "right-5";
 
   return (
-    <div className={`fixed bottom-5 ${positionClass} z-[2147483000] flex flex-col items-end gap-3`}>
+    <div
+      className={`fixed bottom-5 ${positionClass} z-[2147483000] flex flex-col items-end gap-3`}
+    >
       {open && (
         <div className="flex h-[600px] w-[380px] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
           <WidgetHeader name={config.name} onClose={() => setOpen(false)} />
 
-          <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
+          <div
+            ref={listRef}
+            className="flex-1 space-y-3 overflow-y-auto px-3 py-3"
+          >
             {messages.map((m) => {
               if (m.kind === "text") {
                 return (
                   <div
                     key={m.id}
                     className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
-                      m.role === "user" ? "ml-auto bg-primary text-white" : "bg-bubble text-ink"
+                      m.role === "user"
+                        ? "ml-auto bg-primary text-white"
+                        : "bg-bubble text-ink"
                     }`}
                   >
                     {m.content}
@@ -504,7 +641,12 @@ export function ChatWidget() {
                 return (
                   <div key={m.id} className="space-y-2">
                     {m.options.map((opt, i) => (
-                      <OptionButton key={i} icon={opt.icon} label={opt.label} onClick={opt.onSelect} />
+                      <OptionButton
+                        key={i}
+                        icon={opt.icon}
+                        label={opt.label}
+                        onClick={opt.onSelect}
+                      />
                     ))}
                   </div>
                 );
@@ -531,10 +673,14 @@ export function ChatWidget() {
                   />
                 );
               }
-              return <ConfirmationCard key={m.id} confirmation={m.confirmation} />;
+              return (
+                <ConfirmationCard key={m.id} confirmation={m.confirmation} />
+              );
             })}
             {sending && (
-              <div className="max-w-[85%] rounded-xl bg-bubble px-3 py-2 text-sm text-faint">Escribiendo…</div>
+              <div className="max-w-[85%] rounded-xl bg-bubble px-3 py-2 text-sm text-faint">
+                Escribiendo…
+              </div>
             )}
           </div>
 

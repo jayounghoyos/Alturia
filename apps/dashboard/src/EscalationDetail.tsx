@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { EscalationDetail as EscalationDetailData } from "@alturia/shared";
-import { fetchEscalationDetail, replyToEscalation, resolveEscalation } from "./api";
+import {
+  fetchEscalationDetail,
+  replyToEscalation,
+  resolveEscalation,
+} from "./api";
 
 const ROLE_LABEL: Record<string, string> = {
   USER: "Trabajador",
@@ -9,7 +13,13 @@ const ROLE_LABEL: Record<string, string> = {
   SYSTEM: "Sistema",
 };
 
-export function EscalationDetail({ id, onBack }: { id: string; onBack: () => void }) {
+export function EscalationDetail({
+  id,
+  onBack,
+}: {
+  id: string;
+  onBack: () => void;
+}) {
   const [data, setData] = useState<EscalationDetailData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState("");
@@ -62,7 +72,10 @@ export function EscalationDetail({ id, onBack }: { id: string; onBack: () => voi
     <div>
       <div className="flex items-center justify-between">
         <div>
-          <button onClick={onBack} className="text-sm text-primary hover:underline">
+          <button
+            onClick={onBack}
+            className="text-sm text-primary hover:underline"
+          >
             ← Volver a la bandeja
           </button>
           <p className="mt-1 text-sm text-ink">{data.escalation.reason}</p>
@@ -81,8 +94,15 @@ export function EscalationDetail({ id, onBack }: { id: string; onBack: () => voi
       <div className="mt-4 flex h-[500px] flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
         <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-4">
           {data.messages.map((m) => (
-            <div key={m.id} className={m.role === "ADMIN" ? "ml-auto max-w-[75%]" : "max-w-[75%]"}>
-              <p className="mb-0.5 text-xs text-faint">{ROLE_LABEL[m.role] ?? m.role}</p>
+            <div
+              key={m.id}
+              className={
+                m.role === "ADMIN" ? "ml-auto max-w-[75%]" : "max-w-[75%]"
+              }
+            >
+              <p className="mb-0.5 text-xs text-faint">
+                {ROLE_LABEL[m.role] ?? m.role}
+              </p>
               <div
                 className={`rounded-xl px-3 py-2 text-sm ${
                   m.role === "ADMIN"
