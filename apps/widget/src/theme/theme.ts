@@ -19,12 +19,14 @@ export function contrastRatio(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** White or near-black text, whichever reads better on the brand colour. */
+/**
+ * Text colour on the brand colour. Brands expect white on their colour, so
+ * white wins while it reaches 3:1 (WCAG's floor for UI components and bold
+ * text); only light brand colours (yellows, pastels) get near-black text.
+ * The dashboard warns the client when the result is under 4.5:1.
+ */
 export function readableTextOn(background: string): "#ffffff" | "#0b0f14" {
-  return contrastRatio(background, "#ffffff") >=
-    contrastRatio(background, "#0b0f14")
-    ? "#ffffff"
-    : "#0b0f14";
+  return contrastRatio(background, "#ffffff") >= 3 ? "#ffffff" : "#0b0f14";
 }
 
 /**

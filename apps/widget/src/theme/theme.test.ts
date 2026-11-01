@@ -7,8 +7,10 @@ describe("brand theme", () => {
     expect(contrastRatio("#0180e1", "#0180e1")).toBe(1);
   });
 
-  it("puts white text on dark brands and dark text on light ones", () => {
+  it("keeps white text on brand colours and switches only light ones to dark", () => {
     expect(readableTextOn("#7c2d12")).toBe("#ffffff");
+    // Asis Altura's blue: 4.0:1 with white — still white, as on their site.
+    expect(readableTextOn("#0180e1")).toBe("#ffffff");
     expect(readableTextOn("#fec456")).toBe("#0b0f14");
   });
 

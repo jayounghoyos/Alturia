@@ -15,6 +15,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "../auth/auth-context";
+import { PageTitle } from "../components/PageTitle";
 import { BotMark } from "../components/BotMark";
 import { WidgetPreview } from "../components/WidgetPreview";
 import {
@@ -43,8 +44,8 @@ export function AppearancePage() {
   const { bot } = useBot();
   if (!bot) {
     return (
-      <div className="px-6 py-6">
-        <h1 className="text-[22px] leading-7 font-semibold">Apariencia</h1>
+      <div className="px-5 py-6 lg:px-6">
+        <PageTitle>Apariencia</PageTitle>
         <p className="mt-6 h-40 rounded-sheet bg-raised" aria-busy="true" />
       </div>
     );
@@ -157,10 +158,10 @@ function AppearanceForm({ bot }: { bot: BotSettings }) {
         : undefined;
 
   return (
-    <div className="px-4 py-6 lg:px-6">
+    <div className="px-5 py-6 lg:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[22px] leading-7 font-semibold">Apariencia</h1>
+          <PageTitle>Apariencia</PageTitle>
           <p className="mt-1 text-muted">
             Así ven y oyen a tu asistente los visitantes de tu sitio. La vista
             previa cambia mientras editas; nada se publica hasta guardar.
@@ -569,7 +570,7 @@ function AppearanceForm({ bot }: { bot: BotSettings }) {
           <p className="mt-1 text-muted">
             Prueba el menú: las respuestas son de ejemplo.
           </p>
-          <div className="mt-3 h-[640px] rounded-sheet bg-raised p-4">
+          <div data-ui className="mt-3 h-[640px] rounded-sheet bg-raised p-4">
             <WidgetPreview config={preview} apiBaseUrl={api.url("")} />
           </div>
         </aside>

@@ -12,6 +12,7 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { useAuth } from "../auth/auth-context";
 import { BotMark } from "../components/BotMark";
+import { useIsDesktop } from "../lib/useIsDesktop";
 import { useBot } from "./bot-context";
 
 const NAV: { to: string; label: string; icon: LucideIcon; count?: true }[] = [
@@ -29,6 +30,7 @@ export function AppShell() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const current = NAV.find((item) => location.pathname.startsWith(item.to));
+  const desktop = useIsDesktop();
 
   return (
     <div className="min-h-dvh bg-ground lg:flex">
@@ -43,7 +45,11 @@ export function AppShell() {
         >
           <Menu size={20} aria-hidden />
         </button>
-        <span className="font-semibold">{current?.label ?? "AlturiaBot"}</span>
+        {desktop ? null : (
+          <h1 className="text-lg font-semibold">
+            {current?.label ?? "AlturiaBot"}
+          </h1>
+        )}
       </header>
 
       {menuOpen && (

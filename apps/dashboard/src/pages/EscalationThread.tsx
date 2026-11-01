@@ -7,6 +7,7 @@ import { BlockError } from "../components/BlockError";
 import { StatusPill } from "../components/StatusPill";
 import { formatDateTime } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
+import { useIsDesktop } from "../lib/useIsDesktop";
 import { useBot } from "../shell/bot-context";
 
 /** The visitor may still be typing in the widget: keep the thread fresh. */
@@ -16,6 +17,7 @@ export function EscalationThread({ id }: { id: string }) {
   const { api } = useAuth();
   const { bot, inbox } = useBot();
   const navigate = useNavigate();
+  const desktop = useIsDesktop();
   const detail = useAsync(() => api.getEscalation(id), id);
   const [reply, setReply] = useState("");
   const [busy, setBusy] = useState<"send" | "resolve" | null>(null);
@@ -62,7 +64,14 @@ export function EscalationThread({ id }: { id: string }) {
     try {
       await api.resolve(id);
       inbox.reload();
-      void navigate("/escalamientos");
+      // On a wide screen go straight to the next waiting case; the list may
+      // still hold this one until it reloads.
+      const next = desktop
+        ? (inbox.cases ?? [])
+            .filter((c) => c.id !== id)
+            .toSorted((a, b) => a.createdAt.localeCompare(b.createdAt))[0]
+        : undefined;
+      void navigate(next ? `/escalamientos/${next.id}` : "/escalamientos");
     } catch {
       setError("No se pudo marcar como resuelto. Intenta de nuevo.");
       setBusy(null);
@@ -85,42 +94,56 @@ export function EscalationThread({ id }: { id: string }) {
   return (
     <div className="flex min-h-0 w-full">
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-start gap-3 px-6 pt-6 pb-4">
-          <Link
-            to="/escalamientos"
-            aria-label="Volver a la bandeja"
-            className="-ml-2 flex h-8 w-8 flex-none items-center justify-center rounded-control text-muted hover:bg-raised hover:text-ink lg:hidden"
-          >
-            <ArrowLeft size={16} aria-hidden />
-          </Link>
-          <div className="min-w-0 flex-1">
-            <h2 className="text-base font-semibold">
+        <header className="px-5 pt-4 pb-3 lg:px-6 lg:pt-6 lg:pb-4">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/escalamientos"
+              aria-label="Volver a la bandeja"
+              className="-ml-2 flex h-11 w-11 flex-none items-center justify-center rounded-control text-muted hover:bg-raised hover:text-ink lg:hidden"
+            >
+              <ArrowLeft size={16} aria-hidden />
+            </Link>
+            <h2 className="min-w-0 flex-1 truncate text-base font-semibold">
               {data?.escalation.contactInfo?.name ?? "Visitante"}
             </h2>
-            <p className="mt-0.5 truncate text-muted">
+            {open && (
+              <button
+                type="button"
+                onClick={() => void resolve()}
+                disabled={busy !== null}
+                className="flex h-8 flex-none items-center gap-1.5 rounded-control border border-control px-3 font-medium hover:bg-raised disabled:opacity-60"
+              >
+                <Check size={14} aria-hidden />
+                {busy === "resolve" ? (
+                  "Resolviendo…"
+                ) : (
+                  <>
+                    <span className="sm:hidden">Resolver</span>
+                    <span className="hidden sm:inline">
+                      Marcar como resuelto
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="mt-1 flex items-center gap-3">
+            <p className="min-w-0 flex-1 text-muted">
               {data?.escalation.reason ?? " "}
             </p>
+            {data && <StatusPill status={data.escalation.status} />}
           </div>
-          {data && <StatusPill status={data.escalation.status} />}
-          {open && (
-            <button
-              type="button"
-              onClick={() => void resolve()}
-              disabled={busy !== null}
-              className="flex h-8 flex-none items-center gap-1.5 rounded-control border border-control px-3 font-medium hover:bg-raised disabled:opacity-60"
-            >
-              <Check size={14} aria-hidden />
-              {busy === "resolve" ? "Resolviendo…" : "Marcar como resuelto"}
-            </button>
-          )}
+          {data && <ContactLine data={data} />}
         </header>
 
         <ol
           ref={listRef}
           aria-label="Mensajes"
           aria-live="polite"
-          className="min-h-0 flex-1 space-y-3 overflow-y-auto border-t border-rule px-6 py-4"
+          className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto border-t border-rule px-5 py-4 lg:px-6"
         >
+          {/* Pushes a short thread to the bottom, next to the reply box. */}
+          <li aria-hidden="true" className="mt-auto" />
           {data?.messages.map((m) => (
             <Message
               key={m.id}
@@ -131,7 +154,7 @@ export function EscalationThread({ id }: { id: string }) {
         </ol>
 
         {error && (
-          <p role="alert" className="px-6 pb-2 text-negative">
+          <p role="alert" className="px-5 pb-2 text-negative lg:px-6">
             {error}
           </p>
         )}
@@ -139,7 +162,7 @@ export function EscalationThread({ id }: { id: string }) {
         {open && (
           <form
             onSubmit={send}
-            className="flex items-end gap-2 border-t border-rule px-6 py-4"
+            className="flex items-end gap-2 border-t border-rule px-5 py-4 lg:px-6"
           >
             <label htmlFor="reply" className="sr-only">
               Respuesta al visitante
@@ -211,6 +234,16 @@ function Message({
         {m.content}
       </p>
     </li>
+  );
+}
+
+/** Below the wide layout the details column is gone: keep the contact reachable. */
+function ContactLine({ data }: { data: EscalationDetail }) {
+  const contact = data.escalation.contactInfo;
+  const parts = [contact?.phone, contact?.email].filter(Boolean);
+  if (parts.length === 0) return null;
+  return (
+    <p className="num mt-1 text-xs text-muted xl:hidden">{parts.join(" · ")}</p>
   );
 }
 

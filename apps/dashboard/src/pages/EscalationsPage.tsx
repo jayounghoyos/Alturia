@@ -1,9 +1,11 @@
 import type { EscalationRecord } from "@alturia/shared";
 import { RefreshCw } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Link, Navigate, useParams } from "react-router";
+import { PageTitle } from "../components/PageTitle";
 import { BlockError } from "../components/BlockError";
 import { StatusPill } from "../components/StatusPill";
 import { formatTime, timeAgo } from "../lib/format";
+import { useIsDesktop } from "../lib/useIsDesktop";
 import { useBot } from "../shell/bot-context";
 import { EscalationThread } from "./EscalationThread";
 
@@ -15,23 +17,26 @@ export function EscalationsPage() {
   const { id } = useParams();
   const { inbox } = useBot();
   const cases = oldestFirst(inbox.cases ?? []);
+  const desktop = useIsDesktop();
+
+  // With room for both panes, open the case that has waited longest.
+  const oldest = cases[0];
+  // (Only cases still open: one just resolved may linger until the reload.)
+  if (desktop && !id && oldest && oldest.status !== "RESOLVED") {
+    return <Navigate to={`/escalamientos/${oldest.id}`} replace />;
+  }
 
   return (
     <div className="flex min-h-[calc(100dvh-48px)] lg:h-[calc(100dvh-18px)] lg:min-h-0">
       <section
-        aria-labelledby="inbox-title"
+        aria-label="Casos abiertos"
         className={`flex w-full flex-col border-line lg:w-[384px] lg:flex-none lg:border-r ${
           id ? "hidden lg:flex" : "flex"
         }`}
       >
-        <header className="px-6 pt-6 pb-4">
+        <header className="px-5 pt-5 pb-4 lg:px-6 lg:pt-6">
           <div className="flex items-center justify-between gap-3">
-            <h1
-              id="inbox-title"
-              className="text-[22px] leading-7 font-semibold"
-            >
-              Escalamientos
-            </h1>
+            <PageTitle id="inbox-title">Escalamientos</PageTitle>
             <button
               type="button"
               onClick={inbox.reload}
@@ -50,7 +55,7 @@ export function EscalationsPage() {
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {inbox.error && !inbox.cases ? (
-            <div className="px-6">
+            <div className="px-5 lg:px-6">
               <BlockError
                 message="No pudimos cargar los casos."
                 onRetry={inbox.reload}
@@ -69,7 +74,7 @@ export function EscalationsPage() {
               ))}
             </ul>
           ) : cases.length === 0 ? (
-            <p className="mx-6 rounded-card border border-dashed border-line px-4 py-3 text-muted">
+            <p className="mx-5 rounded-card lg:mx-6 border border-dashed border-line px-4 py-3 text-muted">
               Nadie está esperando a un asesor. Cuando alguien lo pida desde el
               chat, aparece aquí.
             </p>
@@ -148,7 +153,7 @@ function finding(cases: EscalationRecord[]): string {
     unanswered.length === 1
       ? "1 persona sin respuesta"
       : `${unanswered.length} personas sin respuesta`;
-  return oldest
-    ? `${count} · la más antigua desde ${timeAgo(oldest.createdAt)}`
-    : count;
+  if (!oldest) return count;
+  const since = timeAgo(oldest.createdAt);
+  return `${count} · la más antigua llegó ${since === "ahora" ? "hace un momento" : since}`;
 }

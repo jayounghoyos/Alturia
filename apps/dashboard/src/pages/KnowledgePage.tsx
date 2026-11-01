@@ -6,6 +6,7 @@ import {
 import { Upload } from "lucide-react";
 import { useRef, useState, type ChangeEvent } from "react";
 import { useAuth } from "../auth/auth-context";
+import { PageTitle } from "../components/PageTitle";
 import { BlockError } from "../components/BlockError";
 import { formatDateTime, formatNumber } from "../lib/format";
 import { useAsync } from "../lib/useAsync";
@@ -60,13 +61,14 @@ export function KnowledgePage() {
   const list = (docs.data ?? []).toSorted((a, b) =>
     a.createdAt.localeCompare(b.createdAt),
   );
-  const used = knowledgeContext(list).length;
+  const context = knowledgeContext(list);
+  const used = context.length;
 
   return (
-    <div className="mx-auto max-w-[920px] px-4 py-6 lg:px-6">
+    <div className="mx-auto max-w-[1152px] px-5 py-6 lg:px-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[22px] leading-7 font-semibold">Conocimiento</h1>
+          <PageTitle>Conocimiento</PageTitle>
           <p className="mt-1 max-w-[60ch] text-muted">
             Lo que tu asistente lee antes de responder: horarios, precios,
             políticas. Sube archivos .md o .txt; se usan en orden, del más
@@ -101,71 +103,75 @@ export function KnowledgePage() {
         </p>
       )}
 
-      <section aria-labelledby="docs-title" className="mt-6">
-        <h2 id="docs-title" className="font-semibold">
-          Documentos{docs.data ? ` (${list.length})` : ""}
-        </h2>
-        {docs.error && !docs.data ? (
-          <div className="mt-3">
-            <BlockError
-              message="No pudimos cargar los documentos."
-              onRetry={docs.reload}
-            />
-          </div>
-        ) : !docs.data ? (
-          <p className="mt-3 h-12 rounded-card bg-raised" aria-busy="true" />
-        ) : list.length === 0 ? (
-          <p className="mt-3 rounded-card border border-dashed border-line px-4 py-3 text-muted">
-            Aún no hay documentos. Sin ellos, el asistente solo usa su
-            personalidad (en Apariencia).
-          </p>
-        ) : (
-          <ul className="mt-2">
-            {list.map((doc) => (
-              <li
-                key={doc.id}
-                className="flex items-center gap-4 border-b border-rule py-3 last:border-b-0"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{doc.title}</p>
-                  <p className="truncate text-xs text-muted">
-                    {formatDateTime(doc.createdAt)} · {doc.content.slice(0, 90)}
-                  </p>
-                </div>
-                <span className="num flex-none text-right text-muted">
-                  {formatNumber(doc.content.length)} car.
-                </span>
-                {confirming === doc.id ? (
-                  <span className="flex flex-none items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void remove(doc)}
-                      className="font-medium text-negative"
-                    >
-                      Eliminar «{doc.title}»
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirming(null)}
-                      className="text-muted"
-                    >
-                      Cancelar
-                    </button>
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+        <section aria-labelledby="docs-title" className="min-w-0">
+          <h2 id="docs-title" className="font-semibold">
+            Documentos{docs.data ? ` (${list.length})` : ""}
+          </h2>
+          {docs.error && !docs.data ? (
+            <div className="mt-3">
+              <BlockError
+                message="No pudimos cargar los documentos."
+                onRetry={docs.reload}
+              />
+            </div>
+          ) : !docs.data ? (
+            <p className="mt-3 h-12 rounded-card bg-raised" aria-busy="true" />
+          ) : list.length === 0 ? (
+            <p className="mt-3 rounded-card border border-dashed border-line px-4 py-3 text-muted">
+              Aún no hay documentos. Sin ellos, el asistente solo usa su
+              personalidad (en Apariencia).
+            </p>
+          ) : (
+            <ul className="mt-2">
+              {list.map((doc) => (
+                <li
+                  key={doc.id}
+                  className="flex items-center gap-4 border-b border-rule py-3 last:border-b-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{doc.title}</p>
+                    <p className="truncate text-xs text-muted">
+                      {formatDateTime(doc.createdAt)} ·{" "}
+                      {doc.content.slice(0, 90)}
+                    </p>
+                  </div>
+                  <span className="num flex-none text-right text-muted">
+                    {formatNumber(doc.content.length)} car.
                   </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirming(doc.id)}
-                    className="flex-none text-muted hover:text-negative"
-                  >
-                    Eliminar
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                  {confirming === doc.id ? (
+                    <span className="flex flex-none items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void remove(doc)}
+                        className="font-medium text-negative"
+                      >
+                        Eliminar «{doc.title}»
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirming(null)}
+                        className="text-muted"
+                      >
+                        Cancelar
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirming(doc.id)}
+                      className="flex-none text-muted hover:text-negative"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        {docs.data && list.length > 0 && <ContextPreview text={context} />}
+      </div>
     </div>
   );
 }
@@ -204,6 +210,34 @@ function ContextUsage({ used }: { used: number }) {
           ? `Sobran ${formatNumber(used - max)} caracteres: el final del último documento no le llega al asistente. Resume o elimina algo.`
           : `Quedan ${formatNumber(max - used)} caracteres libres.`}
       </p>
+    </section>
+  );
+}
+
+/**
+ * The text exactly as the assistant receives it, in order; whatever falls past
+ * the limit is shown faded so the cut is visible, not guessed.
+ */
+function ContextPreview({ text }: { text: string }) {
+  const max = MAX_KNOWLEDGE_CONTEXT_CHARS;
+  const kept = text.slice(0, max);
+  const dropped = text.slice(max);
+  return (
+    <section aria-labelledby="context-title" className="min-w-0">
+      <h2 id="context-title" className="font-semibold">
+        Lo que lee el asistente
+      </h2>
+      <div className="mt-2 max-h-[520px] overflow-y-auto rounded-card bg-raised p-4 whitespace-pre-line">
+        {kept}
+        {dropped && (
+          <>
+            <span className="my-2 block border-t border-dashed border-negative pt-1 text-xs text-negative">
+              Desde aquí no le llega al asistente
+            </span>
+            <span className="text-muted line-through">{dropped}</span>
+          </>
+        )}
+      </div>
     </section>
   );
 }
