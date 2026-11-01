@@ -1,6 +1,9 @@
 import { randomInt, randomUUID } from "node:crypto";
+import { LoginResponseSchema } from "@alturia/shared";
 import type { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import * as bcrypt from "bcryptjs";
+import request from "supertest";
 import type { App } from "supertest/types";
 import { AppModule } from "../../src/app.module";
 import {
@@ -55,4 +58,22 @@ export function createCourse(prisma: PrismaService) {
       type: "RETRAINING",
     },
   });
+}
+
+/** Creates an admin with a unique email and returns a valid Bearer token for it. */
+export async function createAdminToken(ctx: E2eContext): Promise<string> {
+  const email = `admin-${randomUUID()}@e2e.test`;
+  const password = "e2e-password";
+  await ctx.prisma.adminUser.create({
+    data: {
+      email,
+      name: "Admin e2e",
+      passwordHash: await bcrypt.hash(password, 4),
+    },
+  });
+  const res = await request(ctx.app.getHttpServer())
+    .post("/api/auth/login")
+    .send({ email, password })
+    .expect(201);
+  return LoginResponseSchema.parse(res.body).accessToken;
 }

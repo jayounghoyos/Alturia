@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Env } from "../../config/env.schema";
+import { LLM_TIMEOUT_MS, LlmUnavailableError } from "../llm.errors";
 import type { ChatParams, ChatResult, LlmChatProvider } from "../llm.interface";
 
 /** Dev-only provider: talks to Ollama running natively on the team's own GPU box. */
@@ -25,13 +26,21 @@ export class OllamaChatProvider implements LlmChatProvider {
         options: { temperature },
         stream: false,
       }),
+      signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+    }).catch((error: unknown) => {
+      throw new LlmUnavailableError("Ollama", "request failed", {
+        cause: error,
+      });
     });
     if (!res.ok) {
-      throw new Error(
-        `Ollama chat failed (${res.status}): ${await res.text()}`,
+      throw new LlmUnavailableError(
+        "Ollama",
+        `HTTP ${res.status}: ${await res.text()}`,
       );
     }
-    const body = (await res.json()) as { message: { content: string } };
-    return { content: body.message.content };
+    const body = (await res.json()) as { message?: { content?: string } };
+    const content = body.message?.content?.trim();
+    if (!content) throw new LlmUnavailableError("Ollama", "empty completion");
+    return { content };
   }
 }

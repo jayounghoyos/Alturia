@@ -48,6 +48,77 @@ describe("Chat / FAQ with a fake LLM (e2e)", () => {
       await send("not-a-uuid", "Hola").expect(400);
       expect(ctx.llmChat).not.toHaveBeenCalled();
     });
+
+    it("sends the LLM the latest 20 messages as history, oldest first", async () => {
+      const sessionId = randomUUID();
+      const conversation = await ctx.prisma.conversation.create({
+        data: { sessionId },
+      });
+      const start = Date.now() - 60_000;
+      await ctx.prisma.message.createMany({
+        data: Array.from({ length: 25 }, (_, i) => ({
+          conversationId: conversation.id,
+          role: i % 2 === 0 ? ("USER" as const) : ("BOT" as const),
+          content: `mensaje ${i}`,
+          createdAt: new Date(start + i * 1000),
+        })),
+      });
+
+      await send(sessionId, "¿Y ahora?").expect(201);
+
+      const [{ messages }] = ctx.llmChat.mock.calls[0];
+      expect(messages).toHaveLength(21);
+      expect(messages[0].content).toBe("mensaje 5");
+      expect(messages[19].content).toBe("mensaje 24");
+      expect(messages[20]).toEqual({ role: "user", content: "¿Y ahora?" });
+    });
+
+    it("answers with a friendly fallback (not a 500) when the LLM fails", async () => {
+      const sessionId = randomUUID();
+      ctx.llmChat.mockRejectedValueOnce(new Error("model deprecated"));
+
+      const res = await send(sessionId, "¿Cuánto dura el curso?").expect(201);
+
+      const body = ChatResponseSchema.parse(res.body);
+      expect(body.lowConfidence).toBe(true);
+      expect(body.reply).toMatch(/asesor/);
+      const stored = await ctx.prisma.message.findMany({
+        where: { conversation: { sessionId } },
+        orderBy: { createdAt: "asc" },
+      });
+      expect(stored.map((m) => m.role)).toEqual(["USER", "BOT"]);
+    });
+
+    it("reopens a conversation an advisor resolved, and the bot answers again", async () => {
+      const sessionId = randomUUID();
+      await ctx.prisma.conversation.create({
+        data: { sessionId, status: "CLOSED" },
+      });
+
+      const res = await send(sessionId, "Otra pregunta").expect(201);
+
+      expect(ChatResponseSchema.parse(res.body).awaitingHuman).toBe(false);
+      expect(ctx.llmChat).toHaveBeenCalledTimes(1);
+      const conversation = await ctx.prisma.conversation.findUniqueOrThrow({
+        where: { sessionId },
+      });
+      expect(conversation.status).toBe("OPEN");
+    });
+  });
+
+  describe("GET /api/chat/:sessionId/messages — widget polling", () => {
+    it("responds 400 when the sessionId is not a UUID", async () => {
+      await request(ctx.app.getHttpServer())
+        .get("/api/chat/not-a-uuid/messages")
+        .expect(400);
+    });
+
+    it("returns [] for a session that never wrote", async () => {
+      const res = await request(ctx.app.getHttpServer())
+        .get(`/api/chat/${randomUUID()}/messages`)
+        .expect(200);
+      expect(res.body).toEqual([]);
+    });
   });
 
   describe("POST /api/chat — handoff to a human (HU-15, HU-17)", () => {

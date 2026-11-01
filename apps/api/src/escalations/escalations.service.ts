@@ -5,27 +5,53 @@ import type {
   EscalationRecord,
   MessageRecord,
 } from "@alturia/shared";
+import type { Escalation, Prisma } from "@prisma/client";
+import {
+  ConversationsService,
+  toMessageRecord,
+} from "../conversations/conversations.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class EscalationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly conversations: ConversationsService,
+  ) {}
 
+  /** Widget's "talk to a human" button: escalates the visitor's conversation. */
   async create(input: CreateEscalationInput): Promise<{ id: string }> {
-    const conversation = await this.prisma.conversation.upsert({
-      where: { sessionId: input.sessionId },
-      update: { status: "ESCALATED" },
-      create: { sessionId: input.sessionId, status: "ESCALATED" },
+    return this.prisma.$transaction(async (tx) => {
+      const conversation = await this.conversations.markEscalated(
+        input.sessionId,
+        tx,
+      );
+      const escalation = await tx.escalation.create({
+        data: {
+          conversationId: conversation.id,
+          reason: input.reason,
+          contactInfo: input.contact ?? undefined,
+        },
+      });
+      return { id: escalation.id };
     });
+  }
 
-    const escalation = await this.prisma.escalation.create({
-      data: {
-        conversationId: conversation.id,
-        reason: input.reason,
-        contactInfo: input.contact ?? undefined,
-      },
+  /** Chat keyword escalation: the conversation already exists. */
+  async escalateConversation(
+    conversationId: string,
+    reason: string,
+  ): Promise<{ id: string }> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.conversation.update({
+        where: { id: conversationId },
+        data: { status: "ESCALATED" },
+      });
+      const escalation = await tx.escalation.create({
+        data: { conversationId, reason },
+      });
+      return { id: escalation.id };
     });
-    return { id: escalation.id };
   }
 
   /** Powers the dashboard inbox — open/in-progress cases only, newest first. */
@@ -39,73 +65,64 @@ export class EscalationsService {
 
   /** Full thread for one case — the admin's "open this chat" view. */
   async getDetail(id: string): Promise<EscalationDetail> {
-    const escalation = await this.prisma.escalation.findUnique({
-      where: { id },
-      include: {
-        conversation: {
-          include: { messages: { orderBy: { createdAt: "asc" } } },
-        },
-      },
+    const escalation = await this.findOrThrow(id, {
+      conversation: { select: { sessionId: true } },
     });
-    if (!escalation) throw new NotFoundException("Escalation not found");
-
     return {
       escalation: toRecord(escalation),
       sessionId: escalation.conversation.sessionId,
-      messages: escalation.conversation.messages.map(toMessageRecord),
+      messages: await this.conversations.listForConversation(
+        escalation.conversationId,
+      ),
     };
   }
 
   /** Admin sends a message into the conversation — bumps OPEN -> IN_PROGRESS automatically. */
   async reply(id: string, content: string): Promise<MessageRecord> {
-    const escalation = await this.prisma.escalation.findUnique({
-      where: { id },
+    const escalation = await this.findOrThrow(id);
+    const message = await this.prisma.$transaction(async (tx) => {
+      if (escalation.status === "OPEN") {
+        await tx.escalation.update({
+          where: { id },
+          data: { status: "IN_PROGRESS" },
+        });
+      }
+      return this.conversations.append(
+        escalation.conversationId,
+        "ADMIN",
+        content,
+        tx,
+      );
     });
-    if (!escalation) throw new NotFoundException("Escalation not found");
-
-    const [message] = await this.prisma.$transaction([
-      this.prisma.message.create({
-        data: {
-          conversationId: escalation.conversationId,
-          role: "ADMIN",
-          content,
-        },
-      }),
-      this.prisma.escalation.update({
-        where: { id },
-        data: escalation.status === "OPEN" ? { status: "IN_PROGRESS" } : {},
-      }),
-    ]);
     return toMessageRecord(message);
   }
 
+  /** Closes the case; the bot takes over again if the visitor writes later. */
   async resolve(id: string): Promise<void> {
-    const escalation = await this.prisma.escalation.findUnique({
-      where: { id },
-    });
-    if (!escalation) throw new NotFoundException("Escalation not found");
-
-    await this.prisma.$transaction([
-      this.prisma.escalation.update({
+    const escalation = await this.findOrThrow(id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.escalation.update({
         where: { id },
         data: { status: "RESOLVED" },
-      }),
-      this.prisma.conversation.update({
-        where: { id: escalation.conversationId },
-        data: { status: "CLOSED" },
-      }),
-    ]);
+      });
+      await this.conversations.close(escalation.conversationId, tx);
+    });
+  }
+
+  private async findOrThrow<I extends Prisma.EscalationInclude>(
+    id: string,
+    include?: I,
+  ): Promise<Prisma.EscalationGetPayload<{ include: I }>> {
+    const escalation = await this.prisma.escalation.findUnique({
+      where: { id },
+      include,
+    });
+    if (!escalation) throw new NotFoundException("Escalation not found");
+    return escalation as Prisma.EscalationGetPayload<{ include: I }>;
   }
 }
 
-function toRecord(e: {
-  id: string;
-  reason: string;
-  status: "OPEN" | "IN_PROGRESS" | "RESOLVED";
-  contactInfo: unknown;
-  createdAt: Date;
-  conversationId: string;
-}): EscalationRecord {
+function toRecord(e: Escalation): EscalationRecord {
   return {
     id: e.id,
     reason: e.reason,
@@ -113,19 +130,5 @@ function toRecord(e: {
     contactInfo: (e.contactInfo as EscalationRecord["contactInfo"]) ?? null,
     createdAt: e.createdAt.toISOString(),
     conversationId: e.conversationId,
-  };
-}
-
-function toMessageRecord(m: {
-  id: string;
-  role: string;
-  content: string;
-  createdAt: Date;
-}): MessageRecord {
-  return {
-    id: m.id,
-    role: m.role as MessageRecord["role"],
-    content: m.content,
-    createdAt: m.createdAt.toISOString(),
   };
 }

@@ -5,6 +5,7 @@ import {
   type CreateEscalationInput,
   type ReplyToEscalationInput,
 } from "@alturia/shared";
+import { ParseIdPipe } from "../common/id-param.pipe";
 import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Public } from "../auth/public.decorator";
 import { EscalationsService } from "./escalations.service";
@@ -31,14 +32,14 @@ export class EscalationsController {
 
   /** Admin-only — open one case's full conversation thread. */
   @Get(":id")
-  detail(@Param("id") id: string) {
+  detail(@Param("id", ParseIdPipe) id: string) {
     return this.escalations.getDetail(id);
   }
 
   /** Admin-only — reply into the conversation; auto-bumps OPEN -> IN_PROGRESS. */
   @Post(":id/reply")
   reply(
-    @Param("id") id: string,
+    @Param("id", ParseIdPipe) id: string,
     @Body(new ZodValidationPipe(ReplyToEscalationSchema))
     body: ReplyToEscalationInput,
   ) {
@@ -47,7 +48,7 @@ export class EscalationsController {
 
   /** Admin-only — closes the case out. */
   @Patch(":id/resolve")
-  resolve(@Param("id") id: string) {
+  resolve(@Param("id", ParseIdPipe) id: string) {
     return this.escalations.resolve(id);
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Env } from "../../config/env.schema";
+import { LLM_TIMEOUT_MS, LlmUnavailableError } from "../llm.errors";
 import type { ChatParams, ChatResult, LlmChatProvider } from "../llm.interface";
 
 /** Production provider: OpenAI-compatible API, routes to Qwen (or others) without self-hosting anything. */
@@ -27,15 +28,25 @@ export class OpenRouterChatProvider implements LlmChatProvider {
         messages: [{ role: "system", content: systemPrompt }, ...messages],
         temperature,
       }),
+      signal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+    }).catch((error: unknown) => {
+      throw new LlmUnavailableError("OpenRouter", "request failed", {
+        cause: error,
+      });
     });
     if (!res.ok) {
-      throw new Error(
-        `OpenRouter chat failed (${res.status}): ${await res.text()}`,
+      throw new LlmUnavailableError(
+        "OpenRouter",
+        `HTTP ${res.status}: ${await res.text()}`,
       );
     }
     const body = (await res.json()) as {
-      choices: { message: { content: string } }[];
+      choices?: { message?: { content?: string | null } }[];
     };
-    return { content: body.choices[0].message.content };
+    const content = body.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new LlmUnavailableError("OpenRouter", "empty completion");
+    }
+    return { content };
   }
 }

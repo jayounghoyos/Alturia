@@ -1,4 +1,5 @@
 import { Controller, Get, Param } from "@nestjs/common";
+import { ParseIdPipe } from "../common/id-param.pipe";
 import { Public } from "../auth/public.decorator";
 import { CoursesService } from "./courses.service";
 
@@ -14,7 +15,7 @@ export class CoursesController {
   }
 
   @Get(":id/availability")
-  availability(@Param("id") id: string) {
+  availability(@Param("id", ParseIdPipe) id: string) {
     return this.courses.listAvailability(id);
   }
 }

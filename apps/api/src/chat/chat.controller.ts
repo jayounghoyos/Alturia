@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Body, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from "@nestjs/common";
 import { ChatRequestSchema, type ChatRequestInput } from "@alturia/shared";
 import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { Public } from "../auth/public.decorator";
@@ -21,7 +28,7 @@ export class ChatController {
    * generated — same trust model as the rest of the public API (see main.ts).
    */
   @Get(":sessionId/messages")
-  getMessages(@Param("sessionId") sessionId: string) {
+  getMessages(@Param("sessionId", ParseUUIDPipe) sessionId: string) {
     return this.chat.getMessages(sessionId);
   }
 }

@@ -3,6 +3,7 @@ import {
   CreateKnowledgeSourceSchema,
   type CreateKnowledgeSourceInput,
 } from "@alturia/shared";
+import { ParseIdPipe } from "../common/id-param.pipe";
 import { ZodValidationPipe } from "../common/zod-validation.pipe";
 import { KnowledgeService } from "./knowledge.service";
 
@@ -25,7 +26,7 @@ export class KnowledgeController {
   }
 
   @Delete(":id")
-  remove(@Param("id") id: string) {
+  remove(@Param("id", ParseIdPipe) id: string) {
     return this.knowledge.remove(id);
   }
 }
