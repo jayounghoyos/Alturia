@@ -21,6 +21,21 @@ su marca, su asistente y su panel. El primer cliente es **Asis Altura** (certifi
 trabajo en alturas), que además usa funcionalidades propias: consulta de certificados por
 cédula o QR y agendamiento de cursos.
 
+## Aplicación en línea
+
+| Qué | Enlace |
+| --- | --- |
+| Panel del cliente | https://alturia-dashboard.vercel.app/ |
+| Sitio de ejemplo con el chat | https://portafolio-web-nine-lyart.vercel.app/ |
+| Script del widget | https://alturia-widget.vercel.app/widget.js |
+| API | https://alturia-api.onrender.com/ |
+| Manual de usuario | https://github.com/jayounghoyos/Alturia/wiki/Manual-de-Usuario |
+
+El API usa el plan gratuito de Render: la primera visita después de un rato sin uso puede
+tardar cerca de un minuto.
+
+## Arquitectura
+
 ```mermaid
 flowchart LR
   subgraph Sitios de clientes
