@@ -7,6 +7,19 @@ on:
     branches: [main]
 
 jobs:
+  quality:
+    name: Format and shared package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+
+      - name: Format check
+        run: pnpm run format:check
+
+      - name: Typecheck shared
+        run: pnpm --filter shared run typecheck
+
   api:
     runs-on: ubuntu-latest
     services:
@@ -30,26 +43,15 @@ jobs:
       E2E_DATABASE_URL: postgresql://alturia:alturia@localhost:5432/alturia
       JWT_SECRET: ci-test-secret
       LLM_CHAT_PROVIDER: ollama
-      EMBEDDING_PROVIDER: ollama
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Lint
-        run: pnpm --filter api exec eslint "{src,apps,libs,test}/**/*.ts"
+        run: pnpm --filter api run lint
 
-      - name: Format check
-        run: pnpm --filter api exec prettier --check "src/**/*.ts" "test/**/*.ts"
+      - name: Typecheck
+        run: pnpm --filter api run typecheck
 
       - name: Build
         run: pnpm --filter api run build
@@ -63,46 +65,22 @@ jobs:
       - name: E2E tests
         run: pnpm --filter api run test:e2e
 
-  dashboard:
+  frontend:
+    name: ${{ matrix.app }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [dashboard, widget]
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
 
       - name: Lint
-        run: pnpm --filter dashboard run lint
+        run: pnpm --filter ${{ matrix.app }} run lint
+
+      - name: Typecheck
+        run: pnpm --filter ${{ matrix.app }} run typecheck
 
       - name: Build
-        run: pnpm --filter dashboard run build
-
-  widget:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Lint
-        run: pnpm --filter widget run lint
-
-      - name: Build
-        run: pnpm --filter widget run build
+        run: pnpm --filter ${{ matrix.app }} run build

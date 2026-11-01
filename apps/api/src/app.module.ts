@@ -16,6 +16,7 @@ import { AuthModule } from "./auth/auth.module";
 import { EscalationsModule } from "./escalations/escalations.module";
 import { KnowledgeModule } from "./knowledge/knowledge.module";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
+import { validateEnv } from "./config/env.schema";
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { JwtAuthGuard } from "./auth/jwt-auth.guard";
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: resolve(process.cwd(), "../../.env"),
+      validate: validateEnv,
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 60 }]),
     PrismaModule,

@@ -2,7 +2,7 @@
   "name": "alturia",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "postinstall": "pnpm --filter shared run build",
@@ -14,6 +14,14 @@
     "db:migrate:new": "pnpm --filter api exec prisma migrate dev --create-only",
     "db:seed": "pnpm --filter api run seed",
     "build": "pnpm -r run build",
-    "lint": "pnpm -r run lint"
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "test": "pnpm -r run test",
+    "format": "prettier --write apps packages .github \"*.{json,yaml,yml}\"",
+    "format:check": "prettier --check apps packages .github \"*.{json,yaml,yml}\""
+  },
+  "packageManager": "pnpm@10.27.0",
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }

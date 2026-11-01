@@ -25,9 +25,9 @@ pnpm db:migrate
 # 5. Seed demo data (workers, courses, sessions, certificates, admin login)
 pnpm db:seed
 
-# 6. Pull the local models (skip if using a cloud LLM_CHAT_PROVIDER/EMBEDDING_PROVIDER)
-ollama pull qwen2.5:14b-instruct-q4_K_M
-ollama pull nomic-embed-text
+# 6. Pull the local chat model (skip if LLM_CHAT_PROVIDER=openrouter).
+#    Must match OLLAMA_CHAT_MODEL in .env.
+ollama pull qwen2.5:7b
 
 # 7. Run everything (each in its own terminal)
 pnpm dev:api          # http://localhost:3000

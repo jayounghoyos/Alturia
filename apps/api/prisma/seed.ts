@@ -21,9 +21,13 @@ async function seedAdmin() {
   });
 
   if (!process.env.SEED_ADMIN_PASSWORD) {
-    console.log(`Seeded admin login: ${email} / ${password} (default dev password — override with SEED_ADMIN_PASSWORD)`);
+    console.log(
+      `Seeded admin login: ${email} / ${password} (default dev password — override with SEED_ADMIN_PASSWORD)`,
+    );
   } else {
-    console.log(`Seeded admin login: ${email} (password from SEED_ADMIN_PASSWORD)`);
+    console.log(
+      `Seeded admin login: ${email} (password from SEED_ADMIN_PASSWORD)`,
+    );
   }
 }
 
@@ -97,13 +101,21 @@ async function seedWorkersAndCertificates() {
   const worker1 = await prisma.worker.upsert({
     where: { nationalId: "1036482117" },
     update: {},
-    create: { nationalId: "1036482117", name: "Carlos Restrepo", phone: "3001234567" },
+    create: {
+      nationalId: "1036482117",
+      name: "Carlos Restrepo",
+      phone: "3001234567",
+    },
   });
 
   const worker2 = await prisma.worker.upsert({
     where: { nationalId: "1234567890" },
     update: {},
-    create: { nationalId: "1234567890", name: "María Gómez", phone: "3009876543" },
+    create: {
+      nationalId: "1234567890",
+      name: "María Gómez",
+      phone: "3009876543",
+    },
   });
 
   // worker1: both certificates valid — the "everything's fine" demo path.

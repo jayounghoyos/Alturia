@@ -1,10 +1,11 @@
 import { NestFactory } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
 import { AppModule } from "./app.module";
+import type { Env } from "./config/env.schema";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const config = app.get(ConfigService);
+  const config = app.get<ConfigService<Env, true>>(ConfigService);
 
   // Open CORS on purpose — an embeddable widget has to work on whatever
   // origin a customer pastes the script tag into, which we can't know in
@@ -15,6 +16,6 @@ async function bootstrap() {
   // which origin the request came from.
   app.enableCors({ origin: true });
 
-  await app.listen(config.get<number>("PORT") ?? 3000);
+  await app.listen(config.get("PORT", { infer: true }));
 }
 void bootstrap();

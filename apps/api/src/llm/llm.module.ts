@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import { ConfigService } from "@nestjs/config";
+import type { Env } from "../config/env.schema";
 import { EMBEDDING_PROVIDER, LLM_CHAT_PROVIDER } from "./llm.interface";
 import { OllamaChatProvider } from "./providers/ollama-chat.provider";
 import { OpenRouterChatProvider } from "./providers/openrouter-chat.provider";
@@ -13,7 +14,6 @@ import { OpenAiEmbeddingProvider } from "./providers/openai-embedding.provider";
  * for prod (OpenRouter) is a .env change, not a code change.
  */
 @Module({
-  imports: [ConfigModule],
   providers: [
     OllamaChatProvider,
     OpenRouterChatProvider,
@@ -22,11 +22,11 @@ import { OpenAiEmbeddingProvider } from "./providers/openai-embedding.provider";
     {
       provide: LLM_CHAT_PROVIDER,
       useFactory: (
-        config: ConfigService,
+        config: ConfigService<Env, true>,
         ollama: OllamaChatProvider,
         openrouter: OpenRouterChatProvider,
       ) => {
-        switch (config.getOrThrow<string>("LLM_CHAT_PROVIDER")) {
+        switch (config.get("LLM_CHAT_PROVIDER", { infer: true })) {
           case "ollama":
             return ollama;
           case "openrouter":
@@ -42,11 +42,11 @@ import { OpenAiEmbeddingProvider } from "./providers/openai-embedding.provider";
     {
       provide: EMBEDDING_PROVIDER,
       useFactory: (
-        config: ConfigService,
+        config: ConfigService<Env, true>,
         ollama: OllamaEmbeddingProvider,
         openai: OpenAiEmbeddingProvider,
       ) => {
-        switch (config.getOrThrow<string>("EMBEDDING_PROVIDER")) {
+        switch (config.get("EMBEDDING_PROVIDER", { infer: true })) {
           case "ollama":
             return ollama;
           case "openai":

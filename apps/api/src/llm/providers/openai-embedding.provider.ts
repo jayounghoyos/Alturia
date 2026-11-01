@@ -1,15 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Env } from "../../config/env.schema";
 import type { EmbeddingProvider } from "../llm.interface";
 
 /** Production provider — used when EMBEDDING_PROVIDER=openai, independent of whichever LLM_CHAT_PROVIDER is active. */
 @Injectable()
 export class OpenAiEmbeddingProvider implements EmbeddingProvider {
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService<Env, true>) {}
 
   async embed(texts: string[]): Promise<number[][]> {
-    const apiKey = this.config.getOrThrow<string>("OPENAI_API_KEY");
-    const model = this.config.getOrThrow<string>("OPENAI_EMBED_MODEL");
+    const apiKey = this.config.get("OPENAI_API_KEY", { infer: true });
+    const model = this.config.get("OPENAI_EMBED_MODEL", { infer: true });
 
     const res = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",

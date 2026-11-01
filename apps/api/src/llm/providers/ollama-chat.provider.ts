@@ -1,19 +1,20 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { Env } from "../../config/env.schema";
 import type { ChatParams, ChatResult, LlmChatProvider } from "../llm.interface";
 
 /** Dev-only provider: talks to Ollama running natively on the team's own GPU box. */
 @Injectable()
 export class OllamaChatProvider implements LlmChatProvider {
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService<Env, true>) {}
 
   async chat({
     systemPrompt,
     messages,
     temperature,
   }: ChatParams): Promise<ChatResult> {
-    const baseUrl = this.config.getOrThrow<string>("OLLAMA_BASE_URL");
-    const model = this.config.getOrThrow<string>("OLLAMA_CHAT_MODEL");
+    const baseUrl = this.config.get("OLLAMA_BASE_URL", { infer: true });
+    const model = this.config.get("OLLAMA_CHAT_MODEL", { infer: true });
 
     const res = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
