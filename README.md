@@ -120,6 +120,5 @@ apps/api        API NestJS: bots, chat, escalamientos, conocimiento y dominio de
 apps/widget     widget.js embebible (React en Shadow DOM), un build para todos los bots
 apps/dashboard  Panel de cada cliente: escalamientos, conocimiento y apariencia
 packages/shared Esquemas Zod compartidos entre API, widget y dashboard
-designs/mockups/ Diseños del Sprint 0 (mockups y archivo .pen)
-designs/        Diagramas de arquitectura
+designs/        Mockups del Sprint 0 (PDF y archivo fuente .pen)
 ```
