@@ -1,10 +1,12 @@
 import { Controller, Get, Param } from "@nestjs/common";
 import { ParseIdPipe } from "../common/id-param.pipe";
 import { Public } from "../auth/public.decorator";
+import { RequiresFeature } from "../bots/requires-feature.decorator";
 import { CoursesService } from "./courses.service";
 
 /** Public — no auth. Mockups B1/B2: course selection and availability. */
 @Public()
+@RequiresFeature("APPOINTMENTS")
 @Controller("api/courses")
 export class CoursesController {
   constructor(private readonly courses: CoursesService) {}

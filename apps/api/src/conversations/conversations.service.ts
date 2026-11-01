@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import type { MessageRecord } from "@alturia/shared";
 import type { Conversation, Message, MsgRole, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
@@ -8,24 +8,27 @@ type Db = PrismaService | Prisma.TransactionClient;
 
 /**
  * Single owner of Conversation and Message rows. Chat, escalations and the
- * widget's polling all go through here, so the rules (reopen a closed
- * conversation, history order, record shape) live in one place.
+ * widget's polling all go through here, so the rules (bot ownership, reopen a
+ * closed conversation, history order, record shape) live in one place.
  */
 @Injectable()
 export class ConversationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * The visitor's conversation, created on first contact. A conversation an
-   * advisor already resolved (CLOSED) reopens when the visitor writes again,
-   * so the bot answers instead of writing into a closed thread.
+   * The visitor's conversation with this bot, created on first contact. A
+   * conversation an advisor already resolved (CLOSED) reopens when the visitor
+   * writes again, so the bot answers instead of writing into a closed thread.
    */
-  async findOrCreate(sessionId: string): Promise<Conversation> {
-    const conversation = await this.prisma.conversation.upsert({
-      where: { sessionId },
-      update: {},
-      create: { sessionId },
-    });
+  async findOrCreate(botId: string, sessionId: string): Promise<Conversation> {
+    const conversation = assertOwnedBy(
+      botId,
+      await this.prisma.conversation.upsert({
+        where: { sessionId },
+        update: {},
+        create: { sessionId, botId },
+      }),
+    );
     if (conversation.status !== "CLOSED") return conversation;
     return this.prisma.conversation.update({
       where: { id: conversation.id },
@@ -34,14 +37,21 @@ export class ConversationsService {
   }
 
   /** Marks the visitor's conversation as handed to a human, creating it if needed. */
-  markEscalated(
+  async markEscalated(
+    botId: string,
     sessionId: string,
     db: Db = this.prisma,
   ): Promise<Conversation> {
-    return db.conversation.upsert({
-      where: { sessionId },
-      update: { status: "ESCALATED" },
-      create: { sessionId, status: "ESCALATED" },
+    const existing = await db.conversation.findUnique({ where: { sessionId } });
+    if (!existing) {
+      return db.conversation.create({
+        data: { sessionId, botId, status: "ESCALATED" },
+      });
+    }
+    assertOwnedBy(botId, existing);
+    return db.conversation.update({
+      where: { id: existing.id },
+      data: { status: "ESCALATED" },
     });
   }
 
@@ -75,9 +85,12 @@ export class ConversationsService {
   }
 
   /** Full thread for the widget's polling; [] for an unknown session. */
-  async listForSession(sessionId: string): Promise<MessageRecord[]> {
+  async listForSession(
+    botId: string,
+    sessionId: string,
+  ): Promise<MessageRecord[]> {
     const messages = await this.prisma.message.findMany({
-      where: { conversation: { sessionId } },
+      where: { conversation: { sessionId, botId } },
       orderBy: { createdAt: "asc" },
     });
     return messages.map(toMessageRecord);
@@ -99,4 +112,18 @@ export function toMessageRecord(m: Message): MessageRecord {
     content: m.content,
     createdAt: m.createdAt.toISOString(),
   };
+}
+
+/**
+ * Session ids are random v4 UUIDs, one per bot per browser, so a clash means
+ * a client bug or someone probing — one bot never continues another's chat.
+ */
+function assertOwnedBy(
+  botId: string,
+  conversation: Conversation,
+): Conversation {
+  if (conversation.botId !== botId) {
+    throw new ConflictException("This session belongs to another bot");
+  }
+  return conversation;
 }

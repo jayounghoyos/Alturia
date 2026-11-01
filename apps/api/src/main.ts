@@ -14,7 +14,9 @@ async function bootstrap() {
   // third-party origin to ride on, and every route that actually needs
   // protecting (dashboard/admin endpoints) is gated by JwtAuthGuard, not by
   // which origin the request came from.
-  app.enableCors({ origin: true });
+  // maxAge: the X-Alturia-Bot header makes browsers preflight; caching the
+  // preflight keeps polling and cold starts from paying for it every time.
+  app.enableCors({ origin: true, maxAge: 86_400 });
 
   await app.listen(config.get("PORT", { infer: true }));
 }

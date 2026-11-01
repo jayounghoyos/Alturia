@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import type { ChatResponse, MessageRecord } from "@alturia/shared";
+import type { ResolvedBot } from "../bots/bot.types";
 import { ConversationsService } from "../conversations/conversations.service";
 import { EscalationsService } from "../escalations/escalations.service";
 import { LLM_CHAT_PROVIDER, type LlmChatProvider } from "../llm/llm.interface";
@@ -9,25 +10,10 @@ const CHAT_TEMPERATURE = 0.4;
 /** Messages of context sent to the LLM (the most recent ones). */
 const HISTORY_LIMIT = 20;
 
-// Keyword match, not confidence-based — that needs real RAG retrieval scores
-// (see prompt-builder.service.ts).
-const ESCALATION_KEYWORDS = [
-  "asesor",
-  "asesora",
-  "humano",
-  "persona real",
-  "hablar con alguien",
-  "queja",
-  "reclamo",
-];
-
-const ESCALATION_REPLY =
-  "Listo, ya avisé al equipo de Asis Altura y un asesor va a revisar tu caso pronto. " +
-  "A partir de ahora un humano va a responderte por aquí mismo.";
-
 const LLM_FALLBACK_REPLY =
-  "Ahora mismo no puedo responder esa pregunta. Inténtalo de nuevo en un momento " +
-  "o escribe «asesor» y una persona del equipo te ayuda.";
+  "Ahora mismo no puedo responder esa pregunta. Inténtalo de nuevo en un momento.";
+const LLM_FALLBACK_HANDOFF_HINT =
+  " Si prefieres, escribe «asesor» y una persona del equipo te ayuda.";
 
 const reply = (
   text: string,
@@ -52,10 +38,14 @@ export class ChatService {
   ) {}
 
   async handleMessage(
+    bot: ResolvedBot,
     sessionId: string,
     message: string,
   ): Promise<ChatResponse> {
-    const conversation = await this.conversations.findOrCreate(sessionId);
+    const conversation = await this.conversations.findOrCreate(
+      bot.id,
+      sessionId,
+    );
     const history = await this.conversations.recentHistory(
       conversation.id,
       HISTORY_LIMIT,
@@ -68,16 +58,23 @@ export class ChatService {
       return reply("", { awaitingHuman: true });
     }
 
-    if (matchesEscalationKeyword(message)) {
+    // Keyword match, not confidence-based — that needs real RAG retrieval
+    // scores (see prompt-builder.service.ts).
+    const handoff = bot.features.includes("HUMAN_HANDOFF");
+    if (handoff && matchesKeyword(message, bot.escalationKeywords)) {
       await this.escalations.escalateConversation(conversation.id, message);
-      await this.conversations.append(conversation.id, "BOT", ESCALATION_REPLY);
-      return reply(ESCALATION_REPLY, { escalationOffered: true });
+      await this.conversations.append(
+        conversation.id,
+        "BOT",
+        bot.escalationReply,
+      );
+      return reply(bot.escalationReply, { escalationOffered: true });
     }
 
     let answer: string;
     try {
       const result = await this.llm.chat({
-        systemPrompt: await this.promptBuilder.buildSystemPrompt(),
+        systemPrompt: await this.promptBuilder.buildSystemPrompt(bot),
         messages: [
           ...history.map((m) => ({
             role:
@@ -95,12 +92,11 @@ export class ChatService {
         `LLM failed for conversation ${conversation.id}`,
         error instanceof Error ? error.stack : String(error),
       );
-      await this.conversations.append(
-        conversation.id,
-        "BOT",
-        LLM_FALLBACK_REPLY,
-      );
-      return reply(LLM_FALLBACK_REPLY, { lowConfidence: true });
+      const fallback = handoff
+        ? LLM_FALLBACK_REPLY + LLM_FALLBACK_HANDOFF_HINT
+        : LLM_FALLBACK_REPLY;
+      await this.conversations.append(conversation.id, "BOT", fallback);
+      return reply(fallback, { lowConfidence: true });
     }
 
     await this.conversations.append(conversation.id, "BOT", answer);
@@ -108,12 +104,12 @@ export class ChatService {
   }
 
   /** Polled by the widget — returns [] for an unknown sessionId rather than erroring. */
-  getMessages(sessionId: string): Promise<MessageRecord[]> {
-    return this.conversations.listForSession(sessionId);
+  getMessages(botId: string, sessionId: string): Promise<MessageRecord[]> {
+    return this.conversations.listForSession(botId, sessionId);
   }
 }
 
-function matchesEscalationKeyword(message: string): boolean {
+function matchesKeyword(message: string, keywords: string[]): boolean {
   const normalized = message.toLowerCase();
-  return ESCALATION_KEYWORDS.some((kw) => normalized.includes(kw));
+  return keywords.some((kw) => normalized.includes(kw.toLowerCase()));
 }

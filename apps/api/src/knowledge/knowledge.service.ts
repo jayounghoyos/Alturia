@@ -15,10 +15,12 @@ export class KnowledgeService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(
+    botId: string,
     input: CreateKnowledgeSourceInput,
   ): Promise<KnowledgeSourceRecord> {
     const source = await this.prisma.knowledgeSource.create({
       data: {
+        botId,
         type: "TEXT",
         title: input.title,
         content: input.content,
@@ -28,26 +30,26 @@ export class KnowledgeService {
     return toRecord(source);
   }
 
-  async list(): Promise<KnowledgeSourceRecord[]> {
+  async list(botId: string): Promise<KnowledgeSourceRecord[]> {
     const sources = await this.prisma.knowledgeSource.findMany({
-      where: { status: "READY" },
+      where: { botId, status: "READY" },
       orderBy: { createdAt: "desc" },
     });
     return sources.map(toRecord);
   }
 
-  async remove(id: string): Promise<void> {
-    const existing = await this.prisma.knowledgeSource.findUnique({
-      where: { id },
+  async remove(botId: string, id: string): Promise<void> {
+    const existing = await this.prisma.knowledgeSource.findFirst({
+      where: { id, botId },
     });
     if (!existing) throw new NotFoundException("Knowledge source not found");
     await this.prisma.knowledgeSource.delete({ where: { id } });
   }
 
-  /** Concatenated content of every active source, truncated — consumed by PromptBuilderService. */
-  async getActiveContext(): Promise<string | null> {
+  /** The bot's active sources concatenated and truncated — consumed by PromptBuilderService. */
+  async getActiveContext(botId: string): Promise<string | null> {
     const sources = await this.prisma.knowledgeSource.findMany({
-      where: { status: "READY" },
+      where: { botId, status: "READY" },
       orderBy: { createdAt: "asc" },
       select: { title: true, content: true },
     });

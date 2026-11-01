@@ -12,6 +12,7 @@ import {
 } from "../conversations/conversations.service";
 import { PrismaService } from "../prisma/prisma.service";
 
+/** Every admin-facing method takes the admin's botId: one bot never sees another's cases. */
 @Injectable()
 export class EscalationsService {
   constructor(
@@ -20,9 +21,13 @@ export class EscalationsService {
   ) {}
 
   /** Widget's "talk to a human" button: escalates the visitor's conversation. */
-  async create(input: CreateEscalationInput): Promise<{ id: string }> {
+  async create(
+    botId: string,
+    input: CreateEscalationInput,
+  ): Promise<{ id: string }> {
     return this.prisma.$transaction(async (tx) => {
       const conversation = await this.conversations.markEscalated(
+        botId,
         input.sessionId,
         tx,
       );
@@ -37,7 +42,7 @@ export class EscalationsService {
     });
   }
 
-  /** Chat keyword escalation: the conversation already exists. */
+  /** Chat keyword escalation: the conversation already exists and is the bot's. */
   async escalateConversation(
     conversationId: string,
     reason: string,
@@ -55,17 +60,20 @@ export class EscalationsService {
   }
 
   /** Powers the dashboard inbox — open/in-progress cases only, newest first. */
-  async listOpen(): Promise<EscalationRecord[]> {
+  async listOpen(botId: string): Promise<EscalationRecord[]> {
     const escalations = await this.prisma.escalation.findMany({
-      where: { status: { in: ["OPEN", "IN_PROGRESS"] } },
+      where: {
+        status: { in: ["OPEN", "IN_PROGRESS"] },
+        conversation: { botId },
+      },
       orderBy: { createdAt: "desc" },
     });
     return escalations.map(toRecord);
   }
 
   /** Full thread for one case — the admin's "open this chat" view. */
-  async getDetail(id: string): Promise<EscalationDetail> {
-    const escalation = await this.findOrThrow(id, {
+  async getDetail(botId: string, id: string): Promise<EscalationDetail> {
+    const escalation = await this.findOrThrow(botId, id, {
       conversation: { select: { sessionId: true } },
     });
     return {
@@ -78,8 +86,12 @@ export class EscalationsService {
   }
 
   /** Admin sends a message into the conversation — bumps OPEN -> IN_PROGRESS automatically. */
-  async reply(id: string, content: string): Promise<MessageRecord> {
-    const escalation = await this.findOrThrow(id);
+  async reply(
+    botId: string,
+    id: string,
+    content: string,
+  ): Promise<MessageRecord> {
+    const escalation = await this.findOrThrow(botId, id);
     const message = await this.prisma.$transaction(async (tx) => {
       if (escalation.status === "OPEN") {
         await tx.escalation.update({
@@ -98,8 +110,8 @@ export class EscalationsService {
   }
 
   /** Closes the case; the bot takes over again if the visitor writes later. */
-  async resolve(id: string): Promise<void> {
-    const escalation = await this.findOrThrow(id);
+  async resolve(botId: string, id: string): Promise<void> {
+    const escalation = await this.findOrThrow(botId, id);
     await this.prisma.$transaction(async (tx) => {
       await tx.escalation.update({
         where: { id },
@@ -109,12 +121,14 @@ export class EscalationsService {
     });
   }
 
+  /** Another bot's escalation is reported as missing, not as forbidden. */
   private async findOrThrow<I extends Prisma.EscalationInclude>(
+    botId: string,
     id: string,
     include?: I,
   ): Promise<Prisma.EscalationGetPayload<{ include: I }>> {
-    const escalation = await this.prisma.escalation.findUnique({
-      where: { id },
+    const escalation = await this.prisma.escalation.findFirst({
+      where: { id, conversation: { botId } },
       include,
     });
     if (!escalation) throw new NotFoundException("Escalation not found");

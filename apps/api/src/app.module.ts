@@ -10,7 +10,8 @@ import { LlmModule } from "./llm/llm.module";
 import { CertificatesModule } from "./certificates/certificates.module";
 import { CoursesModule } from "./courses/courses.module";
 import { AppointmentsModule } from "./appointments/appointments.module";
-import { BotModule } from "./bot/bot.module";
+import { BotContextGuard } from "./bots/bot-context.guard";
+import { BotsModule } from "./bots/bots.module";
 import { ChatModule } from "./chat/chat.module";
 import { AuthModule } from "./auth/auth.module";
 import { EscalationsModule } from "./escalations/escalations.module";
@@ -33,7 +34,7 @@ import { validateEnv } from "./config/env.schema";
     CertificatesModule,
     CoursesModule,
     AppointmentsModule,
-    BotModule,
+    BotsModule,
     ChatModule,
     AuthModule,
     EscalationsModule,
@@ -45,6 +46,8 @@ import { validateEnv } from "./config/env.schema";
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Protects everything by default — routes opt out with @Public().
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Runs after JwtAuthGuard so it can scope admin requests to their bot.
+    { provide: APP_GUARD, useClass: BotContextGuard },
   ],
 })
 export class AppModule {}
