@@ -1,14 +1,11 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import type {
-  CreateKnowledgeSourceInput,
-  KnowledgeSourceRecord,
+import {
+  knowledgeContext,
+  MAX_KNOWLEDGE_CONTEXT_CHARS,
+  type CreateKnowledgeSourceInput,
+  type KnowledgeSourceRecord,
 } from "@alturia/shared";
 import { PrismaService } from "../prisma/prisma.service";
-
-// Keeps the system prompt from growing unbounded if several documents get
-// uploaded — plain context-stuffing (no chunking/embedding) only makes sense
-// at this scale anyway. Bump this (or move to real RAG) if it's ever too tight.
-const MAX_CONTEXT_CHARS = 6000;
 
 @Injectable()
 export class KnowledgeService {
@@ -55,11 +52,11 @@ export class KnowledgeService {
     });
     if (sources.length === 0) return null;
 
-    const combined = sources
-      .map((s) => `### ${s.title}\n${s.content ?? ""}`)
-      .join("\n\n")
-      .slice(0, MAX_CONTEXT_CHARS);
-    return combined;
+    // Plain context stuffing (no chunking/embedding) only makes sense at this
+    // scale; the cap keeps the prompt bounded. The dashboard shows usage.
+    return knowledgeContext(
+      sources.map((s) => ({ title: s.title, content: s.content ?? "" })),
+    ).slice(0, MAX_KNOWLEDGE_CONTEXT_CHARS);
   }
 }
 

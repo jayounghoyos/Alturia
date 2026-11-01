@@ -35,6 +35,7 @@
     "vitest": "^5.0.5"
   },
   "exports": {
-    "./preview": "./src/preview.ts"
+    "./preview": "./src/preview.ts",
+    "./branding": "./src/branding.ts"
   }
 }

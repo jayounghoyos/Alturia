@@ -1,21 +1,54 @@
 @import "tailwindcss";
+/* The live preview renders the real widget; scan its sources too (the
+   widget's own stylesheet is injected into its shadow root separately). */
+@source "../../widget/src";
 
-/* Same tokens as apps/widget/src/widget.css — extracted from asistalturas.co's
-   own CSS (getComputedStyle on their live headings/buttons), since the client
-   never sent a brand manual. Keep both files in sync if either changes. */
+/* "Framed sheet" app style (taste-skill, seed 384186329): a tinted L-frame
+   for the chrome, the work on a white sheet, one accent. The accent is the
+   client's own brand colour, set at runtime by shell/BotProvider.tsx; the
+   value here only shows until their bot loads. */
 @theme {
-  --color-primary: #0180e1;
-  --color-accent: #fec456;
-  --color-ok: #16a34a;
-  --color-ok-bg: #dcfce7;
-  --color-warn: #b45309;
-  --color-warn-bg: #fef3e2;
-  --color-danger: #dc2626;
-  --color-danger-bg: #fee2e2;
-  --color-ink: #0b0f14;
-  --color-muted: #6b7280;
-  --color-faint: #9aa1ac;
+  --color-ground: #f9fbfc;
+  --color-surface: #ffffff;
+  --color-raised: #f4f6f8;
+  --color-active: #ebedee;
+  --color-line: #e8eaec;
+  --color-rule: #f0f1f2;
+  --color-control: #cdced1;
+  --color-ink: #131416;
+  --color-muted: #5d5f60;
+  --color-accent: #1b6c80;
+  --color-primary: #131416;
+
+  --color-positive: #1e7b4f;
+  --color-negative: #c4242a;
+  --color-warning: #92400e;
+  --color-pill-positive-bg: #dcfae5;
+  --color-pill-positive-ink: #04250e;
+  --color-pill-negative-bg: #ffedea;
+  --color-pill-negative-ink: #831c1e;
+  --color-pill-warning-bg: #fffbeb;
+  --color-pill-warning-ink: #92400e;
+  --color-pill-neutral-bg: #ebedee;
+  --color-pill-neutral-ink: #353736;
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-sheet: 16px;
+
   --font-sans:
     -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
+}
+
+html {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
 }

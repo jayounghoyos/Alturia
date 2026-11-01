@@ -119,6 +119,7 @@ export function createApiClient({
         `/api/chat/${encodeURIComponent(sessionId)}/messages`,
         z.array(MessageRecordSchema),
       ),
-    resolve: (path) => (/^https?:\/\//.test(path) ? path : `${root}${path}`),
+    resolve: (path) =>
+      /^(https?:|blob:|data:)/.test(path) ? path : `${root}${path}`,
   };
 }

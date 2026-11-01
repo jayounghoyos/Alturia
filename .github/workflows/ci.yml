@@ -82,5 +82,8 @@ jobs:
       - name: Typecheck
         run: pnpm --filter ${{ matrix.app }} run typecheck
 
+      - name: Tests
+        run: pnpm --filter ${{ matrix.app }} run test
+
       - name: Build
         run: pnpm --filter ${{ matrix.app }} run build

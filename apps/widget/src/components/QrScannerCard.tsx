@@ -1,4 +1,4 @@
-import { BrowserMultiFormatReader } from "@zxing/browser";
+import type { BrowserMultiFormatReader } from "@zxing/browser";
 import { useEffect, useRef, useState } from "react";
 import { es } from "../i18n/es";
 
@@ -31,36 +31,42 @@ export function QrScannerCard({
     decodedRef.current = onDecoded;
   }, [onDecoded]);
 
-  // Start the camera once when the card mounts; stop it on unmount.
+  // Start the camera once when the card mounts; stop it on unmount. The QR
+  // decoder is loaded here, on first use, so pages that never scan a QR (and
+  // the dashboard's preview) don't pay for it up front.
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader();
-    readerRef.current = reader;
     const video = videoRef.current;
-
-    if (!navigator.mediaDevices?.getUserMedia || !video) {
-      queueMicrotask(() => setError(t.noCamera));
-      return;
-    }
-
     let cancelled = false;
-    queueMicrotask(() => setReading(true));
-    reader
-      .decodeFromVideoDevice(undefined, video, (result, decodeError) => {
-        if (result) {
-          stopCamera(video, controlsRef);
-          decodedRef.current(result.getText());
-        } else if (decodeError && !isExpectedDecodeError(decodeError)) {
-          setError(t.cameraError);
-        }
-      })
-      .then((controls) => {
-        if (cancelled) controls.stop();
-        else controlsRef.current = controls;
-      })
-      .catch(() => {
-        setError(t.cameraDenied);
-        setReading(false);
-      });
+
+    void import("@zxing/browser").then(({ BrowserMultiFormatReader }) => {
+      if (cancelled) return;
+      const reader = new BrowserMultiFormatReader();
+      readerRef.current = reader;
+
+      if (!navigator.mediaDevices?.getUserMedia || !video) {
+        setError(t.noCamera);
+        return;
+      }
+
+      setReading(true);
+      reader
+        .decodeFromVideoDevice(undefined, video, (result, decodeError) => {
+          if (result) {
+            stopCamera(video, controlsRef);
+            decodedRef.current(result.getText());
+          } else if (decodeError && !isExpectedDecodeError(decodeError)) {
+            setError(t.cameraError);
+          }
+        })
+        .then((controls) => {
+          if (cancelled) controls.stop();
+          else controlsRef.current = controls;
+        })
+        .catch(() => {
+          setError(t.cameraDenied);
+          setReading(false);
+        });
+    });
 
     return () => {
       cancelled = true;
