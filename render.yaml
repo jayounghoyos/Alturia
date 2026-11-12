@@ -38,15 +38,13 @@ services:
         value: openrouter
       - key: OPENROUTER_API_KEY
         sync: false
-      # qwen/qwen3.6-plus:free was deprecated by OpenRouter after this was first
-      # set up (see https://openrouter.ai/qwen/qwen3.6-plus, no :free variant
-      # anymore). Swapped for another currently-free model — verified directly
-      # against OpenRouter's API that it responds correctly in Spanish and
-      # isn't rate-limited. Free models get deprecated/renamed over time; if
-      # this one breaks too, check https://openrouter.ai/models?max_price=0
-      # for a current replacement.
+      # ":free" models run on OpenRouter's shared pool: they get retired
+      # (qwen3.6-plus, nemotron-3-nano) or rate-limited upstream (HTTP 429)
+      # without notice. The production model is the regular variant, served
+      # through our own Google AI Studio key registered in OpenRouter (BYOK,
+      # Prioritized), so requests use that key's quota instead of the pool.
       - key: OPENROUTER_CHAT_MODEL
-        value: nvidia/nemotron-3-nano-30b-a3b:free
+        value: google/gemma-4-31b-it
       # EMBEDDING_PROVIDER is optional (defaults to ollama) because nothing
       # calls .embed() yet — KnowledgeModule does plain context stuffing.
       # Set it, plus OPENAI_API_KEY, once real retrieval lands.
